@@ -13,7 +13,7 @@ public class ForTasks {
         //Таблица умножения для числа от до 1 до 10
 //        multiplyTableForNumber();
         //проверка, что число простое
-//        printIsNumberPrime();
+        printIsNumberPrime();
         //печать чисел от 1 до 10 включительно
 //        printNumberFrom1To10();
     }
@@ -60,7 +60,7 @@ public class ForTasks {
         number = scanner.nextInt();
 
         if (number > 1) {
-            for (int i = 2; i < number - 1; i++) {
+            for (int i = 2; i < Math.sqrt(number); i++) {
                 if (number % i == 0) {
                     isPrime = false;
                     break;
