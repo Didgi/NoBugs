@@ -10,9 +10,4 @@ public class Sculpture extends Exhibit {
     public void getConditionStorage() {
         System.out.println("Скульптура нуждается в реставрации");
     }
-
-    @Override
-    public void setHistory(String history) {
-        super.setHistory(history);
-    }
 }
