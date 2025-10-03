@@ -8,7 +8,7 @@ public class Main {
         System.out.println("Все действия пользователя " + historyActionUser.getHistoryUser());
         historyActionUser.undoAction();
         System.out.println("Все действия пользователя " + historyActionUser.getHistoryUser());
-        historyActionUser.repeartLastAction();
+        historyActionUser.repeatLastAction();
         System.out.println("Все действия пользователя " + historyActionUser.getHistoryUser());
     }
 }

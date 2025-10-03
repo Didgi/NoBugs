@@ -2,6 +2,7 @@ package practice6_collections;
 
 import practice_2.Teacher;
 
+import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -15,7 +16,8 @@ public class TreeMapTasks {
     }
 
     public static Integer findMoreId(String name) {
-        return employeeData.higherEntry(name).getValue();
+        final Map.Entry<String, Integer> nameEntry = employeeData.higherEntry(name);
+        return nameEntry != null ? nameEntry.getValue() : employeeData.get(name);
     }
 
 
@@ -38,7 +40,7 @@ public class TreeMapTasks {
         addEmployee("ПервыйБро", 99);
         addEmployee("ВторойБро", 33);
         addEmployee("ТретийБро", 98);
-        addEmployee("ТретийБроооо", 100);
+//        addEmployee("ТретийБроооо", 100);
         System.out.println(findMoreId("ТретийБро"));
     }
 }

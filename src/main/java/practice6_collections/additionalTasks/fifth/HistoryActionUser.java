@@ -22,7 +22,7 @@ public class HistoryActionUser {
         System.out.println("Пользователь отменил последнее действие: " + historyUser.pop());
     }
 
-    public void repeartLastAction() {
+    public void repeatLastAction() {
         System.out.println("Пользователь повторил последнее действие: " + historyUser.push(historyUser.peek()));
     }
 

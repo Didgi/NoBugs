@@ -14,9 +14,9 @@ public class UniqWords {
             if (!cleanedWord.isEmpty()){
                 uniqWords.add(cleanedWord);
             }
-            else {
-                System.out.println("В тексте отсутствуют слова");
-            }
+        }
+        if (uniqWords.isEmpty()){
+            System.out.println("В тексте отсутствуют слова");
         }
         return uniqWords;
     }
