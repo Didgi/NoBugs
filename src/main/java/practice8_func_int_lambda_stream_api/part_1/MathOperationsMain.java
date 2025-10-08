@@ -6,6 +6,14 @@ public class MathOperationsMain {
         MathOperation subtraction = (a, b) -> a - b;
         MathOperation multiplication = (a, b) -> a * b;
         MathOperation division = (a, b) -> a / b;
+        MathOperation division2 = (a, b) -> {
+            if (b == 0) {
+                throw new ArithmeticException("Деление на ноль запрещено");
+            } else {
+                return a / b;
+            }
+
+        };
 
         System.out.println("Сложение: " + additional.apply(5, 5));
         System.out.println("Вычитание: " + subtraction.apply(5, 5));
@@ -15,5 +23,7 @@ public class MathOperationsMain {
         } catch (RuntimeException e) {
             System.out.println("Деление на 0 запрещено: " + e.getMessage());
         }
+        System.out.println("Деление: " + division2.apply(5, 0));
+
     }
 }
