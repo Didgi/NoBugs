@@ -7,7 +7,7 @@ public class mainThird {
     public static void main(String[] args) {
         List<Integer> numbers = Arrays.asList(1, 2, 3, 4);
         double averageNumber = numbers.stream()
-                .reduce(0, Integer::sum) / (double) numbers.size();
+                .mapToInt(n -> n).average().orElse(0);
         System.out.println(averageNumber);
     }
 }
