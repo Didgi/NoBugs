@@ -17,28 +17,29 @@ public class UserAccountOperations {
     }
 
     public void withdrawMoney(UserAccount accountFrom, int amount) {
-        reentrantLock.lock();
-        try {
+//        reentrantLock.lock();
+//        try {
             if (isMoneyEnough(accountFrom, amount)) {
                 int updatedBalance = accountFrom.getBalance() - amount;
                 accountFrom.setBalance(updatedBalance);
+                System.out.println("Выполнение withdrawMoney в потоке: " + Thread.currentThread().getName());
             } else {
                 System.out.println("Недостаточно средств на счёте: " + accountFrom);
             }
-        } finally {
-            reentrantLock.unlock();
-        }
+//        } finally {
+//            reentrantLock.unlock();
+//        }
     }
 
     public void depositMoney(UserAccount accountTo, int amount) {
-        reentrantLock.lock();
-        try {
+//        reentrantLock.lock();
+//        try {
             int updatedBalance = accountTo.getBalance() + amount;
             accountTo.setBalance(updatedBalance);
-            System.out.println("Поток: " + Thread.currentThread().getName());
-        } finally {
-            reentrantLock.unlock();
-        }
+            System.out.println("Выполнение depositMoney в потоке: " + Thread.currentThread().getName());
+//        } finally {
+//            reentrantLock.unlock();
+//        }
     }
     public void transferMoney(UserAccount accountFrom, UserAccount accountTo, int amount) {
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -51,7 +52,7 @@ public class UserAccountOperations {
                 depositMoney(accountTo, amount);
             }
         };
-        executorService.submit(transfer);
+        executorService.execute(transfer);
         try {
             executorService.shutdown();
             executorService.awaitTermination(30, TimeUnit.SECONDS);
