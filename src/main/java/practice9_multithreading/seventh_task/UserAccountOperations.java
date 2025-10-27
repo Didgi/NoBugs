@@ -1,7 +1,5 @@
 package practice9_multithreading.seventh_task;
 
-import practice9_multi_my_practice.task7_new.UserBankAccount;
-
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
