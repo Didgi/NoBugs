@@ -1,8 +1,5 @@
 package practice9_multithreading.seventh_task;
 
-import practice9_multi_my_practice.task7_new.UserBankAccount;
-
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +35,8 @@ public class UserAccountOperations {
             int updatedBalance = accountTo.getBalance() + amount;
             accountTo.setBalance(updatedBalance);
             System.out.println("Выполнение depositMoney в потоке: " + Thread.currentThread().getName());
-            Thread.sleep(50);
+            Thread.sleep(50); //имитация выполнения операции зачисления. Подумал, что это может
+            // дополнительно привести к рассинхрону, когда ещё не было локов, а также проверить, что локи это лечат
         } finally {
             reentrantLock.unlock();
         }
@@ -54,7 +52,8 @@ public class UserAccountOperations {
                 try {
                     depositMoney(accountTo, amount);
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    System.out.println("Операция выполнения зачисления средств не выполнена. " +
+                            "Выполнение программы прервано ошибкой: " + e.getMessage());
                 }
             }
         };
@@ -69,6 +68,7 @@ public class UserAccountOperations {
         try {
             executorService.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            System.out.println("Потом не завершён за отведённое время. Происходит принудительное прерывание потока.");
             Thread.currentThread().interrupt();
         }
     }

@@ -39,6 +39,7 @@ public class ListElementsExecutor {
         try {
             executorService.awaitTermination(30, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            System.out.println("Потом не завершён за отведённое время. Происходит принудительное прерывание потока.");
             Thread.currentThread().interrupt();
         }
     }
