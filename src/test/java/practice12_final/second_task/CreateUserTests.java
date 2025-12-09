@@ -102,7 +102,7 @@ public class CreateUserTests {
     @DisplayName("Проверка на то, что невозможно создать пользователя с невалидными данными, где имя/email - null")
     public void checkUserCreationThrowsNPExceptionWhenDataIsInvalidWithNull(String name, int age, String email) throws InvalidUserException {
 
-        assertThrows(NullPointerException.class, () -> {
+        assertThrows(InvalidUserException.class, () -> {
             new User(name, age, email);
         });
     }

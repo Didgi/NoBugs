@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,11 +63,11 @@ public class AddGradeTests extends BaseTest {
     public void addGradeIsSuccessWhenGradeIsDoubleAndValid(double grade) throws InvalidGradeException, InvalidStudentNameException {
         StudentGrade<Double> studentGrade = new StudentGrade<>(randomName, Subjects.PHYSICS, grade);
 
-        int expectedGradeList = gradeService.getStudentGradeList().size();
+        int expectedGradeList = gradeServiceDouble.getStudentGradeList().size();
         assertEquals(0, expectedGradeList);
         gradeServiceDouble.addGrade(studentGrade);
 
-        int actualGradeList = gradeService.getStudentGradeList().size();
+        int actualGradeList = gradeServiceDouble.getStudentGradeList().size();
         assertEquals(expectedGradeList + 1, actualGradeList);
 
         final StudentGrade<Double> studentGradeInList = gradeServiceDouble.getStudentGradeList().get(0);
@@ -77,7 +76,7 @@ public class AddGradeTests extends BaseTest {
         assertEquals(grade, studentGradeInList.getGrade());
     }
 
-    //Негативный тест на добавление целочисленной отрицательной оценки
+    //Негативный тест на добавление целочисленной невалидной оценки
     @ParameterizedTest
     @ValueSource(ints = {
             -1,
@@ -95,6 +94,27 @@ public class AddGradeTests extends BaseTest {
         });
 
         int actualGradeList = gradeService.getStudentGradeList().size();
+        assertEquals(expectedGradeList, actualGradeList);
+    }
+
+    //Негативный тест на добавление дробной невалидной оценки
+    @ParameterizedTest
+    @ValueSource(doubles = {
+            -0.01,
+            5.01
+    })
+    @DisplayName("Добавление дробной отрицательной оценки -0.01 и положительной 5.01 по одному предмету")
+    public void addGradeThrowsExceptionWhenGradeIsIntAndInvalid(double grade) throws InvalidGradeException, InvalidStudentNameException {
+        StudentGrade<Double> studentGrade = new StudentGrade<>(randomName, Subjects.MATHS, grade);
+
+        int expectedGradeList = gradeServiceDouble.getStudentGradeList().size();
+        assertEquals(0, expectedGradeList);
+
+        assertThrows(InvalidGradeException.class, () -> {
+            gradeServiceDouble.addGrade(studentGrade);
+        });
+
+        int actualGradeList = gradeServiceDouble.getStudentGradeList().size();
         assertEquals(expectedGradeList, actualGradeList);
     }
 

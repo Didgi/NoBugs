@@ -17,9 +17,8 @@ public class InventoryService {
     public Product getProductFromInventory(Product product) throws OutOfStockException {
         List<Product> products = inventoryMap.get(product.getCategory());
         if (products != null) {
-            final Optional<Product> foundProductOptional = inventoryMap.values().stream().flatMap(List::stream)
-                    .filter(p -> p.getName().equals(product.getCategory()) &&
-                            p.getPrice() == product.getPrice()).findFirst();
+            final Optional<Product> foundProductOptional = products.stream().filter(p -> p.getName().equals(product.getName()) &&
+                    p.getPrice() == product.getPrice()).findFirst();
             if (foundProductOptional.isPresent()) {
                 Product foundProduct = foundProductOptional.get();
                 products.remove(foundProduct);

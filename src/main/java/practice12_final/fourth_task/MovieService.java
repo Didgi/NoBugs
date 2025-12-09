@@ -1,10 +1,8 @@
 package practice12_final.fourth_task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class MovieService {
@@ -12,7 +10,7 @@ public class MovieService {
     private MovieRating<?> movieRating;
 
     public MovieService() {
-        this.ratingMap = new ConcurrentHashMap<>();
+        this.ratingMap = new HashMap<>();
     }
 
     public synchronized <T extends Number> void addMovieRating(Movie movie, T rateValue) throws InvalidRateException {
@@ -26,15 +24,17 @@ public class MovieService {
 
     }
 
-    public double getAvgRateByMovie(Movie movie){
-        return ratingMap.entrySet().stream()
-                .filter(entry -> entry.getKey().getName().equals(movie.getName()))
-                .flatMap(entry -> entry.getValue().stream())
-                .mapToDouble(rate -> rate.getValue().doubleValue()).average().orElse(0.0);
+    public double getAvgRateByMovie(Movie movie) {
+        if (ratingMap.get(movie) != null) {
+            return ratingMap.get(movie).stream()
+                    .mapToDouble(rate -> rate.getValue().doubleValue()).average().orElse(0.0);
+        } else {
+            return 0.0;
+        }
     }
 
-    public List<Map.Entry<String, Double>> getSortedMovieList(){
-      return ratingMap.entrySet().stream()
+    public List<Map.Entry<String, Double>> getSortedMovieList() {
+        return ratingMap.entrySet().stream()
                 .map(entry -> Map.entry(
                         entry.getKey().getName(),
                         entry.getValue().stream().mapToDouble(rate -> rate.getValue().doubleValue())
