@@ -9,7 +9,7 @@ public class TaskService<T> {
     private List<Task<T>> taskList = new CopyOnWriteArrayList<>();
 
     public List<Task<T>> getTaskList() {
-        return taskList;
+        return List.copyOf(taskList);
     }
 
     public void addTask(Task<T> task) {

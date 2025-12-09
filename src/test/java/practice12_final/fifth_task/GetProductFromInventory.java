@@ -23,7 +23,7 @@ public class GetProductFromInventory extends BaseTest {
     //Позитивный тест
     @Test
     @DisplayName("Получение не последнего товара из существующей категории")
-    public void getProductFromInventoryIsSuccessWhenProductInCategoryIsNotLast() {
+    public void getProductFromInventoryIsSuccessWhenProductInCategoryIsNotLast() throws OutOfStockException {
         Product productAppleGreen = new Product("Яблоко зелёное", 70, "Фрукты");
         Product productAppleRed = new Product("Яблоко красное", 90, "Фрукты");
         InventoryService.isInventoryOpen = true;
@@ -33,22 +33,17 @@ public class GetProductFromInventory extends BaseTest {
 
         assertEquals(2, inventoryMapSizeInitial);
 
-        try {
-            final Product productFromInventory = inventoryService.getProductFromInventory(productAppleGreen);
-            checkProductFromInventory(productFromInventory, productAppleGreen);
-            int inventoryMapSizeUpdated = inventoryService.getInventoryMap().values().stream().mapToInt(List::size).sum();
-            assertEquals(1, inventoryMapSizeUpdated);
-        } catch (OutOfStockException e) {
-            System.out.println(e.getMessage());
-        }
-
+        final Product productFromInventory = inventoryService.getProductFromInventory(productAppleGreen);
+        checkProductFromInventory(productFromInventory, productAppleGreen);
+        int inventoryMapSizeUpdated = inventoryService.getInventoryMap().values().stream().mapToInt(List::size).sum();
+        assertEquals(1, inventoryMapSizeUpdated);
 
     }
 
     //Позитивный тест
     @Test
     @DisplayName("Получение одного из нескольких одинаковых товаров одной категории")
-    public void getOneOfEqualProductsFromSameCategoryFromInventoryIsSuccessWhenProductInCategoryIsNotLast() {
+    public void getOneOfEqualProductsFromSameCategoryFromInventoryIsSuccessWhenProductInCategoryIsNotLast() throws OutOfStockException {
         Product productAppleGreen = new Product("Яблоко зелёное", 70, "Фрукты");
         InventoryService.isInventoryOpen = true;
         inventoryService.addProductToInventory(productAppleGreen);
@@ -57,14 +52,10 @@ public class GetProductFromInventory extends BaseTest {
 
         assertEquals(2, inventoryMapSizeInitial);
 
-        try {
-            final Product productFromInventory = inventoryService.getProductFromInventory(productAppleGreen);
-            checkProductFromInventory(productFromInventory, productAppleGreen);
-            int inventoryMapSizeUpdated = inventoryService.getInventoryMap().values().stream().mapToInt(List::size).sum();
-            assertEquals(1, inventoryMapSizeUpdated);
-        } catch (OutOfStockException e) {
-            System.out.println(e.getMessage());
-        }
+        final Product productFromInventory = inventoryService.getProductFromInventory(productAppleGreen);
+        checkProductFromInventory(productFromInventory, productAppleGreen);
+        int inventoryMapSizeUpdated = inventoryService.getInventoryMap().values().stream().mapToInt(List::size).sum();
+        assertEquals(1, inventoryMapSizeUpdated);
     }
 
     //Негативный тест
