@@ -13,7 +13,7 @@ public class BaseTest {
     @BeforeEach
     public void setUp() {
         entityManager = new EntityManager<>();
-        new Random().nextInt(99);
+        randomAge = new Random().nextInt(99);
     }
 
 

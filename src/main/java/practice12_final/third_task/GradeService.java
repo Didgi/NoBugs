@@ -22,10 +22,10 @@ public class GradeService<T extends Number> {
     }
 
     public synchronized void addGrade(StudentGrade<T> studentGrade) throws InvalidGradeException, InvalidStudentNameException {
-        if (studentGrade.getGrade().intValue() < 0) {
+        if (studentGrade.getGrade().doubleValue() < 0) {
             throw new InvalidGradeException("Передана отрицательная оценка");
         }
-        if (studentGrade.getGrade().intValue() > 5) {
+        if (studentGrade.getGrade().doubleValue() > 5) {
             throw new InvalidGradeException("Передана оценка больше 5");
         }
         if (studentGrade.getStudentName().isEmpty()) {
@@ -38,6 +38,6 @@ public class GradeService<T extends Number> {
 
     public double getAvgGradeBySubject(Subjects subject) {
         return studentGradeList.stream().filter(data -> data.getSubject().equals(subject))
-                .mapToInt(data -> data.getGrade().intValue()).average().orElse(0);
+                .mapToDouble(data -> data.getGrade().doubleValue()).average().orElse(0);
     }
 }
