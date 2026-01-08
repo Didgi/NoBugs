@@ -1,7 +1,6 @@
 package cleancode.fixcode.sixth;
 
-class Penguin extends NonflyingBird {
-    @Override
+class Penguin extends Bird {
     public void walk() {
         System.out.println("Пингвин ходит покачиваясь");
     }
