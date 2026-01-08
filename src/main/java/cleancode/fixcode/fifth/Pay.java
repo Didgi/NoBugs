@@ -1,5 +1,5 @@
 package cleancode.fixcode.fifth;
 
-public interface IPayment {
+public interface Pay {
     void paymentProcessor(double amount);
 }
