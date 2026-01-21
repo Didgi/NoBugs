@@ -3,9 +3,9 @@ package cleancode.patterns.creational.builder.first;
 import java.util.Arrays;
 
 public class Order {
-    private String[] goods;
-    private int discount;
-    private String paymentType;
+    private final String[] goods;
+    private final int discount;
+    private final String paymentType;
 
     public Order(String[] goods, int discount, String paymentType) {
         this.goods = goods;
@@ -47,7 +47,7 @@ public class Order {
 
     @Override
     public String toString() {
-        return "Builder{" +
+        return "Order{" +
                 "goods=" + Arrays.toString(goods) +
                 ", discount=" + discount +
                 ", paymentType='" + paymentType + '\'' +

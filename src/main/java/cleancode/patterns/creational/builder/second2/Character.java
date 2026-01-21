@@ -2,11 +2,11 @@ package cleancode.patterns.creational.builder.second2;
 
 public class Character {
 
-    private String name;
-    private double health;
-    private double power;
-    private double armor;
-    private double magic;
+    private final String name;
+    private final double health;
+    private final double power;
+    private final double armor;
+    private final double magic;
 
     public Character(String name, double health, double power, double armor, double magic) {
         this.name = name;
