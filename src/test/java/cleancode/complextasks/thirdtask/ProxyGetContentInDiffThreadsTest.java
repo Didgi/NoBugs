@@ -8,12 +8,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ProxyGetContentInDiffThreadsTest {
+public class ProxyGetContentInDiffThreadsTest extends BaseTest {
 
     @RepeatedTest(5)
     @DisplayName("Позитивный тест: загрузка книг впервые и получение из памяти в несколько потоков")
     public void uploadBooksAndGetFromStorageIsDiffThreads() throws InterruptedException {
-
 
         List<BookBuilder> bookBuilders = new CopyOnWriteArrayList<>();
         List<BookProxy> bookProxies = new CopyOnWriteArrayList<>();
@@ -31,8 +30,6 @@ public class ProxyGetContentInDiffThreadsTest {
                 books.add(i, buildBook);
                 bookProxies.add(i, new BookProxy(books.get(i)));
                 bookProxies.get(i).getContent();
-                int updatedStorageSize = bookProxies.get(i).getBookService().getBookStorage().getBooksStorage().size();
-                assertEquals(1, updatedStorageSize);
                 try {
                     Thread.sleep(5);
                 } catch (InterruptedException e) {
@@ -54,8 +51,6 @@ public class ProxyGetContentInDiffThreadsTest {
                 books.add(i, buildBook);
                 bookProxies.add(i, new BookProxy(books.get(i)));
                 bookProxies.get(i).getContent();
-                int updatedStorageSize = bookProxies.get(i).getBookService().getBookStorage().getBooksStorage().size();
-                assertEquals(1, updatedStorageSize);
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -69,6 +64,9 @@ public class ProxyGetContentInDiffThreadsTest {
         thread.start();
         threadSecond.start();
         thread.join();
-        thread.join();
+        threadSecond.join();
+
+        int updatedStorageSize = BookStorage.getBooksStorage().size();
+        assertEquals(2000, updatedStorageSize);
     }
 }

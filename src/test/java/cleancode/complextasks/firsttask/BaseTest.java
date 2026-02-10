@@ -9,14 +9,15 @@ public class BaseTest {
     ShorteningStrategy shorteningStrategy;
     UrlShortenerService urlShortenerService;
     ConcurrentHashMap<String, String> urlStorageMap;
+    MemoryStorage memoryStorage;
 
     @BeforeEach
     public void setUp() throws NoSuchAlgorithmException {
         shorteningStrategy = ShortenerFactory.chooseAlgorithmStrategy(EnumAlgorithms.BASE_62);
-        urlShortenerService = UrlShortenerService.getInstance(shorteningStrategy);
-        urlShortenerService.setShorteningStrategy(shorteningStrategy);
-        urlStorageMap = MemoryStorage.getUrlStorageMap();
-        MemoryStorage.getUrlStorageMap().clear();
+        urlShortenerService = new UrlShortenerService(shorteningStrategy);
+        memoryStorage = MemoryStorage.getInstance();
+        urlStorageMap = memoryStorage.getUrlStorageMap();
+        urlStorageMap.clear();
     }
 
 }

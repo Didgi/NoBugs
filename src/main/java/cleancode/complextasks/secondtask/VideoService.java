@@ -46,10 +46,10 @@ public class VideoService implements Uploading, Streaming {
 
     @Override
     public void streamVideo(int id) throws IOException {
-        final Video checkVideo = videoStorage.getVideo(id);
+        Video checkVideo = videoStorage.getVideo(id);
         if (checkVideo == null) {
             throw new IOException("По текущему id видео отсутствует");
         }
-        System.out.println("Запущено видео в формате: " + video.getVideoFormat() + " с videoId: " + id);
+        System.out.println("Запущено видео в формате: " + checkVideo.getVideoFormat() + " с videoId: " + id);
     }
 }

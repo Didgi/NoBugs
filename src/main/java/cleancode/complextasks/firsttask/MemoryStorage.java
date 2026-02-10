@@ -1,14 +1,14 @@
 package cleancode.complextasks.firsttask;
 
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MemoryStorage implements UrlStorage {
-    private static ConcurrentHashMap<String, String> urlStorageMap;
+    private ConcurrentHashMap<String, String> urlStorageMap;
+    private ConcurrentHashMap<String, String> urlStorageMapShortenOriginal;
 
     private MemoryStorage() {
         urlStorageMap = new ConcurrentHashMap<>();
+        urlStorageMapShortenOriginal = new ConcurrentHashMap<>();
     }
 
     public static class Helper {
@@ -22,6 +22,7 @@ public class MemoryStorage implements UrlStorage {
     @Override
     public void save(String originalUrl, String shortenUrl) {
         urlStorageMap.put(originalUrl, shortenUrl);
+        urlStorageMapShortenOriginal.put(shortenUrl, originalUrl);
     }
 
     @Override
@@ -31,14 +32,11 @@ public class MemoryStorage implements UrlStorage {
 
     @Override
     public String getOriginalUrl(String shortenUrl) {
-        final Optional<Map.Entry<String, String>> result = urlStorageMap.entrySet().stream()
-                .filter(pair -> pair.getValue().equals(shortenUrl)).findFirst();
-        return result.map(Map.Entry::getKey).orElse(null);
+        return urlStorageMapShortenOriginal.get(shortenUrl);
     }
 
-    public static ConcurrentHashMap<String, String> getUrlStorageMap() {
+    public ConcurrentHashMap<String, String> getUrlStorageMap() {
         return urlStorageMap;
     }
-
 
 }

@@ -14,7 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class UploadVideoTests extends BaseTest {
 
     public static Stream<Arguments> uploadAndConvertDiffVideoFormatsParam() {
-        return Stream.of(Arguments.of(
+        return Stream.of(
+                Arguments.of(
                         "test/test.avi", VideoFormat.MP4),
                 Arguments.of("test/test.mov", VideoFormat.MP4),
                 Arguments.of("test/test.wmv", VideoFormat.MP4),
@@ -27,7 +28,7 @@ public class UploadVideoTests extends BaseTest {
     public void uploadAndConvertValidVideoFormatToMp4IsSuccessWhenVideoFormatIs(String videoUrl,
                                                                                 VideoFormat expectedVideoformat) {
         Video video = videoService.uploadVideo(videoUrl);
-        assertEquals(videoUrl, video.getUrl());
+        assertEquals(videoUrl.toLowerCase(), video.getUrl());
         assertEquals(expectedVideoformat, video.getVideoFormat());
 
     }

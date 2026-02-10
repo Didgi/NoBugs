@@ -4,13 +4,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.security.NoSuchAlgorithmException;
-
 public class MakeShortenUrlByBase62Tests extends BaseTest {
 
     @Test
     @DisplayName("Позитивный тест: создание короткого урла в Base62 по не пустому урлу")
-    public void makeShortenUrlBase62IsSuccessWhenIncomingUrlIsNotNull() throws NoSuchAlgorithmException {
+    public void makeShortenUrlBase62IsSuccessWhenIncomingUrlIsNotNull() {
         String originalUrl = "https://nobugs.me/members/courses/want-an-offer-in-qa-auto/domasnee-zadanie-kompleksnye-zadaci-780471161126";
         String expectedShortenUrl = "9YZoKyqA7eK2UzB2jUAbMGZnwtWrAUYOv19yVWDh9IIwOLGXNEkgVFdRRNWBeqnRTsbA4OW0NouwGAJzDTZ9lB1oLd2m9tRL8Sxo1Kd9VzokCLRE9y3q7zNianrfYI1xYDosGmz9kEqw7j4Y";
         final String madeActualShortenUrl = urlShortenerService.makeShortenUrl(originalUrl);

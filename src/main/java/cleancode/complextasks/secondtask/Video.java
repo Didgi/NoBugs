@@ -8,7 +8,7 @@ public class Video {
 
     public Video(VideoFormat videoFormat, String url) {
         this.videoFormat = videoFormat;
-        this.url = url;
+        this.url = url.toLowerCase();
     }
 
     public int getId() {

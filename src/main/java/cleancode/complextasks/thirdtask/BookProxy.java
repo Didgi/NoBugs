@@ -13,6 +13,12 @@ public class BookProxy implements Readable {
         this.bookService = new BookService(book);
     }
 
+    //добавил исключительно для инъекции spy bookService
+    public BookProxy(Book book, BookService bookService) {
+        this.book = book;
+        this.bookService = bookService;
+    }
+
     @Override
     public String getContent() {
         String foundBook = bookService.getContent();

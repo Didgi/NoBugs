@@ -31,7 +31,7 @@ public class AddVideoToStorageInDiffThreadsTest extends BaseTest {
             for (int i = 0; i < 500; i++) {
                 totalRequests.getAndIncrement();
                 String videoUrl = "test/test"+ i + ".mov";
-                Video video= new Video(VideoFormat.AVI, videoUrl);
+                Video video= new Video(VideoFormat.MOV, videoUrl);
                 videoStorage.addVideoToStorage(video);
                 try {
                     Thread.sleep(3);

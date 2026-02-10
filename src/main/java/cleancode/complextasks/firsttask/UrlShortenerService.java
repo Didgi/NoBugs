@@ -1,32 +1,21 @@
 package cleancode.complextasks.firsttask;
 
 public class UrlShortenerService {
-    private static volatile UrlShortenerService instance;
     private ShorteningStrategy shorteningStrategy;
     private UrlStorage urlStorage;
 
-    private UrlShortenerService(ShorteningStrategy shorteningStrategy) {
+    public UrlShortenerService(ShorteningStrategy shorteningStrategy) {
         this.shorteningStrategy = shorteningStrategy;
         this.urlStorage = MemoryStorage.getInstance();
-    }
-
-    public static UrlShortenerService getInstance(ShorteningStrategy shorteningStrategy) {
-        if (instance == null) {
-            synchronized (UrlShortenerService.class) {
-                if (instance == null) {
-                    instance = new UrlShortenerService(shorteningStrategy);
-                }
-            }
-        }
-        return instance;
     }
 
     public String makeShortenUrl(String originalUrl) {
         if (originalUrl == null) {
             throw new IllegalArgumentException("Передано null значение");
         }
-        String shortenUrl = shorteningStrategy.makeShortenUrl(originalUrl.toLowerCase());
-        urlStorage.save(originalUrl, shortenUrl);
+        String lowerOriginalUrl = originalUrl.toLowerCase();
+        String shortenUrl = shorteningStrategy.makeShortenUrl(lowerOriginalUrl);
+        urlStorage.save(lowerOriginalUrl, shortenUrl);
         return shortenUrl;
     }
 

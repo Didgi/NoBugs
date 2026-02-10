@@ -11,7 +11,6 @@ public class MakeShortenUrlByMD5Tests extends BaseTest {
     @Test
     @DisplayName("Позитивный тест: смена стратегии с Base62 на MD5")
     public void changeStrategyFromBase62ToMD5EncodingUrl() throws NoSuchAlgorithmException {
-        shorteningStrategy = ShortenerFactory.chooseAlgorithmStrategy(EnumAlgorithms.BASE_62);
         String originalUrl = "https://nobugs.me/members/courses/want-an-offer-in-qa-auto/domasnee-zadanie-kompleksnye-zadaci-780471161126";
         String expectedShortenUrlBase62 = "9YZoKyqA7eK2UzB2jUAbMGZnwtWrAUYOv19yVWDh9IIwOLGXNEkgVFdRRNWBeqnRTsbA4OW0NouwGAJzDTZ9lB1oLd2m9tRL8Sxo1Kd9VzokCLRE9y3q7zNianrfYI1xYDosGmz9kEqw7j4Y";
         final String madeActualShortenUrlBase62 = urlShortenerService.makeShortenUrl(originalUrl);

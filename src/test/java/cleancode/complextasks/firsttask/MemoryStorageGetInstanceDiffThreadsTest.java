@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MemoryStorageGetInstanceDiffThreadsTest {
+public class MemoryStorageGetInstanceDiffThreadsTest extends BaseTest{
 
     @RepeatedTest(5)
     @DisplayName("Создание и получение инстансов в нескольких потоках для memory storage")
@@ -58,7 +58,8 @@ public class MemoryStorageGetInstanceDiffThreadsTest {
         Assertions.assertNotNull(memoryStorageSecond);
 
         Assertions.assertSame(memoryStorageFirst.get(), memoryStorageSecond.get());
-        Assertions.assertEquals(2000, MemoryStorage.getUrlStorageMap().size());
+        Assertions.assertEquals(2000, memoryStorageFirst.get().getUrlStorageMap().size());
+        Assertions.assertEquals(2000, memoryStorageSecond.get().getUrlStorageMap().size());
     }
 
 }
