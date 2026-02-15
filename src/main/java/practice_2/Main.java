@@ -20,7 +20,7 @@ public class Main {
         book1.setAuthor("Сапковский");
         book1.printInfo();
 
-        //BANKACCOUNT
+        //BANK_ACCOUNT
         BankAccount bankAccount1 = new BankAccount("Я", 100.1);
         bankAccount1.printBalance();
         bankAccount1.deposit(100);
@@ -33,7 +33,7 @@ public class Main {
         point1.setX(5.01);
         point1.print();
 
-        //STUDENTGROUP
+        //STUDENT_GROUP
         StudentGroup studentGroup1 = new StudentGroup("946", 20);
         studentGroup1.printInfo();
         studentGroup1.setStudentCount(18);
