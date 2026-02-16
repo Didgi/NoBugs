@@ -1,0 +1,291 @@
+# Positive test: user can deposit 2000 money into his account
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user1",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: get auth token by user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+"username": "user1",
+"password": "Password1!"
+}
+
+### Precondition step: Authorized user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Main step 1: deposit 2000 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 2000
+}
+
+### Main step 2: check updated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Positive test: user can deposit money into his account twice and more times with common amount more 5000
+### Precondition: contains previous steps
+### Main step 1: deposit 4999 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 4999
+}
+
+### Main step 2: deposit 5000 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 5000.0
+}
+
+### Main step 3: check updated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Positive test: user can deposit money into his second and more accounts
+### Precondition step: Authorized user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Precondition step: Authorized user creates one more account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Main step 1: deposit 0.01 money into his first account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 0.01
+}
+
+### Main step 2: deposit 5000 money into his second account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 2,
+  "balance": 5000
+}
+
+### Main step 3: check updated balance (amount) on first user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Main step 4: check updated balance (amount) on second user account
+GET /api/v1/accounts/2/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot deposit 0 money into his account
+### Main step 1: deposit 0 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 0
+}
+
+### Main step 2: check unupdated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot deposit 5001 money into his account
+### Main step 1: deposit 5001 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 1,
+  "balance": 5001
+}
+
+### Main step 2: check unupdated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot deposit 5000.01 money into his account
+### Main step 1: deposit 5000.01 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 1,
+  "balance": 5000.01
+}
+
+### Main step 2: check unupdated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot deposit negative value into his account
+### Main step 1: deposit -100 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 1,
+  "balance": -100
+}
+
+### Main step 2: check unupdated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot deposit money into some else's account
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new first user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user1",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: admin creates a new second user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user2",
+  "password": "Password1!",
+  "role": "USER"
+}
+
+### Precondition step: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized first user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Precondition step: get auth token by second user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user2",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized second user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Main step 1: second user deposit 2000 money into first user account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 2000
+}
+
+### Main step 2: check unupdated balance (amount) on second user account
+GET /api/v1/accounts/2/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Main step 3: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+### Main step 4: check unupdated balance (amount) on first user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+#Negative test: user cannot deposit into non existed account
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: find maximum existed account id
+GET /api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Precondition step: get auth token by user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Main step 1: deposit money into non existed account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 10000, //maximum_account_id + 1
+  "balance": 100
+}
