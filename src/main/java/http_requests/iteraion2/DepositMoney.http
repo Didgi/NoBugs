@@ -289,3 +289,48 @@ Authorization: Basic YWRtaW46YWRtaW4=
   "id": 10000, //maximum_account_id + 1
   "balance": 100
 }
+
+# Negative test: user cannot deposit 5000.01 money into his account
+### Main step 1: deposit 5000.01 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 5000.01
+}
+
+### Main step 2: check unupdated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot deposit 0.01 money into his account
+### Main step 1: deposit 0.01 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 0.01
+}
+
+### Main step 2: check unupdated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Positive test: user can deposit 4999.99 money into his account
+### Main step 1: deposit 4999.99 money
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+{
+  "id": 1,
+  "balance": 4999.99
+}
+
+### Main step 2: check updated balance (amount) on user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=

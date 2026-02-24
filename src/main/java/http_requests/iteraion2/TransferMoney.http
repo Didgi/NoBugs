@@ -996,3 +996,329 @@ GET /api/v1/accounts/1/transactions
 Content-Type: application/json
 Authorization: Basic YWRtaW46YWRtaW4=
 
+
+# Positive test: user can transfer 0.01 to some else's existed account
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new first user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user1",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: admin creates a new second user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user2",
+  "password": "Password1!",
+  "role": "USER"
+}
+
+### Precondition step: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized first user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Precondition step: get auth token by second user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user2",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized second user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Main step 1: second user deposit 0.01 money into his account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 0.01
+}
+
+### Main step 2: second user transfer 0.01 money to first user account
+POST http://localhost:4111/api/v1/accounts/transfer
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "senderAccountId": 2,
+  "receiverAccountId": 1,
+  "amount": 0.01
+}
+
+### Main step 3: check updated balance (amount) on second user account
+GET /api/v1/accounts/2/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Main step 4: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Main step 5: check updated balance (amount) on first user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Positive test: user can transfer 9999.99 to some else's existed account
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new first user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user1",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: admin creates a new second user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user2",
+  "password": "Password1!",
+  "role": "USER"
+}
+
+### Precondition step: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized first user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Precondition step: get auth token by second user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user2",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized second user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Main step 1: second user deposit 5000 money into his account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 5000
+}
+
+### Main step 2: second user deposit 5000 money into his account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 5000
+}
+
+### Main step 3: second user transfer 9999.99 money to first user account
+POST http://localhost:4111/api/v1/accounts/transfer
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "senderAccountId": 2,
+  "receiverAccountId": 1,
+  "amount": 9999.99
+}
+
+### Main step 3: check updated balance (amount) on second user account
+GET /api/v1/accounts/2/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Main step 4: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Main step 5: check updated balance (amount) on first user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+
+# Negative test: user cannot transfer 10000.01 to some else's existed account
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new first user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user1",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: admin creates a new second user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "user2",
+  "password": "Password1!",
+  "role": "USER"
+}
+
+### Precondition step: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized first user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Precondition step: get auth token by second user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user2",
+  "password": "Password1!"
+}
+
+### Precondition step: Authorized second user creates an account
+POST http://localhost:4111/api/v1/accounts
+Content-Type: application/json
+Authorization: Basic a2F0ZTE5OTgxOmthdGUxOTk4MQ==
+
+### Main step 1: second user deposit 5000 money into his account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 5000
+}
+
+### Main step 2: second user deposit 5000 money into his account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 5000
+}
+
+### Main step 3: second user deposit 100 money into his account
+POST http://localhost:4111/api/v1/accounts/deposit
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "id": 2,
+  "balance": 100
+}
+
+### Main step 3: second user transfer 10000.01 money to first user account
+POST http://localhost:4111/api/v1/accounts/transfer
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "senderAccountId": 2,
+  "receiverAccountId": 1,
+  "amount": 10000.01
+}
+
+### Main step 4: check unupdated balance (amount) on second user account
+GET /api/v1/accounts/2/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+### Main step 5: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1",
+  "password": "Password1!"
+}
+
+### Main step 6: check unupdated balance (amount) on first user account
+GET /api/v1/accounts/1/transactions
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
