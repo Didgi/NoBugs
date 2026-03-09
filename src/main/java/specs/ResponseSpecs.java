@@ -6,31 +6,35 @@ import io.restassured.specification.ResponseSpecification;
 import static org.apache.http.HttpStatus.*;
 
 public class ResponseSpecs {
+
     private ResponseSpecs() {
     }
 
-    public static ResponseSpecBuilder basicResponseSpec() {
+    private static ResponseSpecBuilder defaultResponseBuilder() {
         return new ResponseSpecBuilder();
     }
 
     public static ResponseSpecification requestReturnsOk() {
-        return basicResponseSpec().expectStatusCode(SC_OK).build();
+        return defaultResponseBuilder()
+                .expectStatusCode(SC_OK).build();
     }
 
     public static ResponseSpecification entityWasCreated() {
-        return basicResponseSpec().expectStatusCode(SC_CREATED).build();
-    }
-
-    public static ResponseSpecification requestReturnsForbidden() {
-        return basicResponseSpec().expectStatusCode(SC_FORBIDDEN).build();
+        return defaultResponseBuilder().expectStatusCode(SC_CREATED).build();
     }
 
     public static ResponseSpecification requestReturnsBadRequest() {
-        return basicResponseSpec().expectStatusCode(SC_BAD_REQUEST).build();
+        return defaultResponseBuilder()
+                .expectStatusCode(SC_BAD_REQUEST).build();
     }
 
-    public static ResponseSpecification requestReturnsInternalServiceError() {
-        return basicResponseSpec().expectStatusCode(SC_INTERNAL_SERVER_ERROR).build();
+    public static ResponseSpecification requestReturnsForbidden() {
+        return defaultResponseBuilder()
+                .expectStatusCode(SC_FORBIDDEN).build();
     }
 
+    public static ResponseSpecification requestReturnsInternalServerError() {
+        return defaultResponseBuilder()
+                .expectStatusCode(SC_INTERNAL_SERVER_ERROR).build();
+    }
 }

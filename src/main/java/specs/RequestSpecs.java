@@ -1,57 +1,55 @@
 package specs;
 
-import config.Config;
+import config.Users;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import models.LoginRequest;
-import requests.skelethon.EndpointRequests;
-import requests.skelethon.requesters.CrudRequester;
+import requests.LoginRequester;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import static config.ApiPath.BASE_URI;
+import static config.ApiPath.*;
 
 public class RequestSpecs {
 
-    private static Map<String, String> tokenStorage = new HashMap<>();
-    private static final String ADMIN_USERNAME = Config.getProperty("admin_username");
-    private static final String ADMIN_PASSWORD = Config.getProperty("admin_username");
+    static private String adminToken = null;
 
     private RequestSpecs() {
     }
 
-    public static RequestSpecBuilder basicRequestSpec() {
-        return new RequestSpecBuilder().setContentType(ContentType.JSON)
+    private static RequestSpecBuilder defaultBuilder() {
+        return new RequestSpecBuilder()
+                .setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
                 .addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter()))
                 .setBaseUri(BASE_URI);
     }
 
     public static RequestSpecification withoutTokenSpec() {
-        return basicRequestSpec().build();
+        return defaultBuilder().build();
     }
 
-    public static RequestSpecification withToken(String token) {
-        return basicRequestSpec().build().headers("Authorization", token);
+    public static RequestSpecification withTokenSpec(String token) {
+        return defaultBuilder()
+                .build().header(AUTH_HEADER, token);
     }
 
-    public static RequestSpecification withAdminToken() {
-        if (!tokenStorage.containsKey(ADMIN_USERNAME)) {
-            final LoginRequest loginRequestAdmin = LoginRequest.builder().username(ADMIN_USERNAME).
-                    password(ADMIN_PASSWORD).build();
-            String adminToken = new CrudRequester(withoutTokenSpec(), EndpointRequests.LOGIN, ResponseSpecs.requestReturnsOk())
-                    .POST(loginRequestAdmin)
-                    .assertThat()
-                    .extract()
-                    .header("Authorization");
-            tokenStorage.put(ADMIN_USERNAME, adminToken);
+    public static RequestSpecification adminTokenSpec() {
+        if (adminToken == null) {
+            LoginRequest loginRequest = LoginRequest.builder()
+                    .username(Users.ADMIN_USERNAME)
+                    .password(Users.ADMIN_PASSWORD)
+                    .build();
+
+            adminToken = new LoginRequester(RequestSpecs.withoutTokenSpec(), ResponseSpecs.requestReturnsOk())
+                    .post(loginRequest).extract()
+                    .header(AUTH_HEADER);
+            System.out.println("Генерация нового токена для админа");
         }
-        return basicRequestSpec().build().headers("Authorization", tokenStorage.get(ADMIN_USERNAME));
+        return defaultBuilder()
+                .build().header(AUTH_HEADER, adminToken);
     }
-
 }
