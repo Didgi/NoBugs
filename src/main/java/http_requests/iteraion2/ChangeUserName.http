@@ -1,0 +1,217 @@
+# Positive test: user can change his name to another valid with 15 symbols
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "UserName1-1User",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: get auth token by user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "UserName1-1User",
+  "password": "Password1!"
+}
+
+### Main step 1: change name to another valid
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "UserName1-2User"
+}
+
+### Main step 2: check updated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Positive test: user can change his name to same name with 3 characters
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates a new user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "Us1",
+  "password": "Password1!",
+  "role": "USER"
+}
+### Precondition step: get auth token by user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "Us1",
+  "password": "Password1!"
+}
+
+### Main step 1: change name to same name
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "Us1"
+}
+
+### Main step 2: check updated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+
+# Negative test: user cannot change his name to name from other user
+### Precondition step: get auth token by admin
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+### Precondition step: admin creates first user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "Us1",
+  "password": "Password1!",
+  "role": "USER"
+}
+
+### Precondition step: admin creates second user
+POST http://localhost:4111/api/v1/admin/users
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "username": "Us2",
+  "password": "Password1!",
+  "role": "USER"
+}
+
+### Precondition step: get auth token by first user
+POST http://localhost:4111/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "Us1",
+  "password": "Password1!"
+}
+
+### Main step 1: change name to name from other user
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "Us2"
+}
+
+### Main step 2: check unupdated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+
+////
+
+# Negative test: user cannot change his name with empty user
+### Main step 1: change name to name with empty user
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": ""
+}
+
+### Main step 2: check unupdated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot change his name with blank user
+### Main step 1: change name to name with blank
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "   "
+}
+
+### Main step 2: check unupdated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot change his name with 2 characters
+### Main step 1: change name to name with 2 characters
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "u9"
+}
+
+### Main step 2: check unupdated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+# Negative test: user cannot change his name with 16 characters
+### Main step 1: change name to name with 16 characters
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "user1991user1991"
+}
+
+### Main step 2: check unupdated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+
+# Negative test: user cannot change his name with username contains $%^&*()@# characters
+### Main step 1: change name to name with $%^&*()@# characters
+PUT /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
+
+{
+  "name": "$%^&*()@#"
+}
+
+### Main step 2: check unupdated user name
+GET /api/v1/customer/profile
+Content-Type: application/json
+Authorization: Basic YWRtaW46YWRtaW4=
