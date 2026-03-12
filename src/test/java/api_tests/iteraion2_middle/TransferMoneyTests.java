@@ -161,7 +161,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
     @DisplayName("Негативный тест: пользователь не может переводить сумму больше 10000")
     public void userCannotTransferMoneyToSomeoneElseExistedAccountMoreThanMaximumLimit() {
 
-        int moneyToDeposit = 5000;
+        double moneyToDeposit = RandomData.getMoneyFromTo(4000, 5000);
         double moneyToTransfer = 10000.01;
 
         //трижды пополняем аккаунт основного пользователя
@@ -183,7 +183,8 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(actualErrorMessage).isEqualTo(TRANSFER_AMOUNT_CANNOT_EXCEED_10000.getValue());
 
         //проверяем баланс аккаунта основного пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDeposit * 3);
+        double expectedBalance = BigDecimal.valueOf(moneyToDeposit * 3).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
         //проверяем транзакции основного пользователя
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
@@ -209,6 +210,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCanTransferMoneyBetweenHisAccounts() {
 
         final double depositTransferMoney = RandomData.getMoney();
+        final double expectedZeroBalance = 0.0;
 
         //пополняем первый аккаунт пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, depositTransferMoney);
@@ -230,7 +232,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
         //проверяем общий баланс первого аккаунта пользователя после перевода
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
 
         //проверяем транзакции пользователя по первому аккаунту
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
@@ -276,6 +278,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void UserCanTransferMoneyToSomeoneElseUserWithTwoExistedAccounts() {
 
         final Double depositTransferMoney = RandomData.getMoney();
+        final double expectedZeroBalance = 0.0;
 
         //пополняем аккаунт основного пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, depositTransferMoney);
@@ -301,7 +304,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
         //проверяем общий баланс аккаунта основного пользователя после перевода
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
 
         //проверяем транзакции основного пользователя
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
@@ -340,7 +343,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(secondUserSecondAccountTransactionsResponse.getRelatedAccountId()).isEqualTo(userAccount);
 
         //проверяем общий баланс первого аккаунта второго пользователя после перевода
-        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountFirst)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountFirst)).isEqualTo(expectedZeroBalance);
 
     }
 
@@ -349,6 +352,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyToSomeoneElseExistedAccountWhenHisAccountBalanceIsZero() {
 
         final Double transferMoney = RandomData.getMoney();
+        final double expectedZeroBalance = 0.0;
 
         //создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
@@ -364,14 +368,14 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(errorMessage).isEqualTo(INVALID_TRANSFER_INSUFFICIENT_FUNDS_OR_INVALID_ACCOUNTS.getValue());
 
         //Проверяем баланс основного пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
 
         //Проверяем транзакции основного пользователя
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
         softly.assertThat(userFirstTransactions.isEmpty());
 
         //Проверяем баланс второго пользователя
-        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(expectedZeroBalance);
 
         //Проверяем транзакции второго пользователя
         final List<UserTransactionsResponse> userSecondTransactions = getUserTransactions(authTokenUserSecond, secondUserAccount);
@@ -385,6 +389,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyFromSomeoneElseExistedAccountToHisOwn() {
 
         double moneyToDepositTransfer = RandomData.getMoney();
+        final double expectedZeroBalance = 0.0;
 
         //создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
@@ -403,7 +408,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(errorMessage).isEqualTo(UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
         //Проверяем баланс основного пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
 
         //Проверяем баланс второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(moneyToDepositTransfer);
@@ -437,6 +442,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
 
         double moneyToTransfer = RandomData.getMoney();
         int nonExistingAccount = getMaxExistedAccountId() + 1;
+        final double expectedZeroBalance = 0.0;
 
         //выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, nonExistingAccount,
@@ -446,7 +452,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(actualErrorMessage).isEqualTo(INVALID_TRANSFER_INSUFFICIENT_FUNDS_OR_INVALID_ACCOUNTS.getValue());
 
         //Проверяем баланс пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
 
         //Проверяем транзакции аккаунта пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
@@ -463,6 +469,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
 
         double moneyToTransfer = RandomData.getMoney();
         int nonExistingAccount = getMaxExistedAccountId() + 1;
+        final double expectedZeroBalance = 0.0;
 
         //выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, nonExistingAccount,
@@ -472,7 +479,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(actualErrorMessage).isEqualTo(UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
         //Проверяем баланс пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
 
         //Проверяем транзакции аккаунта пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
