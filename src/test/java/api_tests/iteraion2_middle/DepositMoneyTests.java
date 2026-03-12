@@ -6,7 +6,6 @@ import models.DepositRequest;
 import models.UserAccountResponse;
 import models.UserTransactionsResponse;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -233,7 +232,6 @@ public class DepositMoneyTests extends BaseTestMiddle {
     public void userCannotDepositIntoNonExistedAccount() {
 
         double expectedBalance = 0.0;
-
         final Double depositMoney = RandomData.getMoney();
 
         final DepositRequest depositRequest = DepositRequest

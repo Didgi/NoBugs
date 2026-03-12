@@ -189,7 +189,6 @@ public class BaseTestMiddle {
 
     protected static String failedChangeUserName(String updatedUserName, String userToken, ResponseSpecification responseSpecs){
         final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(updatedUserName).build();
-//        return new ChangeUserRequester(RequestSpecs.withTokenSpec(userToken), ResponseSpecs.requestReturnsBadRequest())
         return new ChangeUserRequester(RequestSpecs.withTokenSpec(userToken), responseSpecs)
                 .put(changeUserRequest).extract().body().asString();
     }
