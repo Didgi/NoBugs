@@ -1,5 +1,6 @@
 package api_tests.iteraion2_middle;
 
+import config.AccountData;
 import config.Operations;
 import config.ResponseMessages;
 import models.DepositRequest;
@@ -51,7 +52,8 @@ public class DepositMoneyTests extends BaseTestMiddle {
 
         //проверяем ответ на запрос пополнения
         softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getId());
-        softly.assertThat(userAccountResponse.getAccountNumber()).isEqualTo("ACC" + depositRequest.getId());
+        softly.assertThat(userAccountResponse.getAccountNumber())
+                .isEqualTo(AccountData.ACCOUNT_NUMBER_PREFIX.getValue() + depositRequest.getId());
         softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getBalance());
         softly.assertThat(userAccountResponse.getTransactions()).isNotEmpty();
 
