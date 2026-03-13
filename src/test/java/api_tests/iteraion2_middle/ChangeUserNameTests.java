@@ -1,6 +1,7 @@
 package api_tests.iteraion2_middle;
 
 import config.ResponseMessages;
+import models.ChangeUserRequest;
 import models.ChangeUserResponse;
 import models.UsersResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import requests.ChangeUserRequester;
+import specs.RequestSpecs;
 import specs.ResponseSpecs;
 import utils.RandomData;
 
@@ -28,7 +31,10 @@ public class ChangeUserNameTests extends BaseTestMiddle {
     public void userCanChangeHisNameWithValidData(String updatedUserName) {
 
         //выполняем запрос на изменение имени пользователя
-        final ChangeUserResponse changeUserResponse = successfulChangeUserName(updatedUserName, authUserToken);
+        final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(updatedUserName).build();
+        final ChangeUserResponse changeUserResponse = new ChangeUserRequester(RequestSpecs.withTokenSpec(authUserToken), ResponseSpecs.requestReturnsOk())
+                .put(changeUserRequest).extract().as(ChangeUserResponse.class);
+
 
         //проверяем в ответе на запрос имя и сообщение об успешном выполнении
         softly.assertThat(changeUserResponse.getCustomer().getName()).isEqualTo(updatedUserName);
@@ -101,7 +107,9 @@ public class ChangeUserNameTests extends BaseTestMiddle {
         final String secondUserAuthToken = createUserAndGetToken();
 
         //выполняем запрос на изменение имени пользователя
-        final ChangeUserResponse changeSecondUserResponse = successfulChangeUserName(newName, secondUserAuthToken);
+        final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(newName).build();
+        final ChangeUserResponse changeSecondUserResponse = new ChangeUserRequester(RequestSpecs.withTokenSpec(secondUserAuthToken), ResponseSpecs.requestReturnsOk())
+                .put(changeUserRequest).extract().as(ChangeUserResponse.class);
 
         //проверяем в ответе на запрос имя и сообщение об успешном выполнении
         softly.assertThat(changeSecondUserResponse.getCustomer().getName()).isEqualTo(newName);
