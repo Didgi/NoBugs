@@ -19,13 +19,17 @@ public class BaseTestSenior {
     public void setUp() {
         softly = new SoftAssertions();
         UserSteps.SoftAssertions(softly);
+        // 1. Создаём нового пользователя и получаем его токен
         authUserToken = createUserAndGetToken();
+        // 2. Создаём аккаунт для пользователя
         userAccount = createUserAccount(authUserToken);
     }
 
     @AfterEach
     public void cleanUp() {
+        // 3. Удаляем все аккаунты пользователя
         deleteUserAccounts(authUserToken);
+        // 4. Удаляем всех пользователей
         deleteUsersById();
         softly.assertAll();
     }

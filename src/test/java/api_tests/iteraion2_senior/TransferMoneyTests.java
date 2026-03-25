@@ -45,26 +45,26 @@ public class TransferMoneyTests extends BaseTestSenior {
     public void userCanTransferMoneyToSomeoneElseExistedAccount(double moneyToDeposit, double moneyToTransfer) {
 
         int repeatDepositTimes = 2;
-        //дважды пополняем аккаунт основного пользователя
+        // 1. Дважды пополняем аккаунт основного пользователя
         UserSteps.repeatAction(repeatDepositTimes, () -> depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit));
 
-        //создаём второго пользователя и получаем его токен
+        // 2. Создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
 
-        //создаём аккаунт для второго пользователя
+        // 3. Создаём аккаунт для второго пользователя
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
-        //сохраняем текущее время
+        // 4. Сохраняем текущее время
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        //выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя и проверяем параметры ответа
+        // 5. Выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя и проверяем параметры ответа
         final TransferResponse transferResponse =
                 successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, secondUserAccount, moneyToTransfer);
 
-        //проверяем сообщение в ответе об успешном переводе
+        // 6. Проверяем сообщение в ответе об успешном переводе
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
-        //проверяем общий баланс аккаунта основного пользователя после перевода
+        // 7. Проверяем общий баланс аккаунта основного пользователя после перевода
         final double expectedBalanceForFirstUserRawValue =
                 Math.round((moneyToDeposit * repeatDepositTimes - moneyToTransfer) * 100D) / 100D;
         BigDecimal expectedBalanceForFirstUser =
@@ -72,13 +72,13 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalanceForFirstUser.doubleValue());
 
-        //проверяем транзакции основного пользователя на перевод
+        // 8. Проверяем транзакции основного пользователя на перевод
         UserSteps.checkPositiveUserTransactions(authUserToken, userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT, moneyToTransfer);
 
-        //проверяем общий баланс аккаунта второго пользователя после перевода
+        // 9. Проверяем общий баланс аккаунта второго пользователя после перевода
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(moneyToTransfer);
 
-        //проверяем транзакции второго пользователя на полученный перевод
+        // 10. Проверяем транзакции второго пользователя на полученный перевод
         checkPositiveUserTransactions(authTokenUserSecond, secondUserAccount, userAccount, nowTime, Operations.TRANSFER_IN, moneyToTransfer);
 
     }
@@ -97,33 +97,33 @@ public class TransferMoneyTests extends BaseTestSenior {
                                                                                        double moneyToTransfer,
                                                                                        String errorMessage) {
 
-        //пополняем аккаунт основного пользователя
+        // 1. Пополняем аккаунт основного пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
 
-        //создаём второго пользователя и получаем его токен
+        // 2. Создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
 
-        //создаём аккаунт для второго пользователя
+        // 3. Создаём аккаунт для второго пользователя
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 4. Выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage =
                 failedTransferMoneyBetweenAccounts(authUserToken, userAccount, secondUserAccount, moneyToTransfer,
                         ResponseSpecs.requestReturnsBadRequest());
 
-        //проверяем сообщение об ошибке
+        // 5. Проверяем сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(errorMessage);
 
-        //проверяем баланс аккаунта основного пользователя
+        // 6. Проверяем баланс аккаунта основного пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDeposit);
 
-        //проверяем транзакции основного пользователя на перевод
+        // 7. Проверяем транзакции основного пользователя на перевод
         UserSteps.checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_OUT);
 
-        //проверяем баланс аккаунта второго пользователя
+        // 8. Проверяем баланс аккаунта второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //проверяем транзакцию второго пользователя на получение перевода
+        // 9. Проверяем транзакцию второго пользователя на получение перевода
         checkNegativeUserTransactions(authTokenUserSecond, secondUserAccount, null);
     }
 
@@ -136,34 +136,34 @@ public class TransferMoneyTests extends BaseTestSenior {
         double moneyToTransfer = 10000.01;
 
         int repeatDepositTimes = 3;
-        //трижды пополняем аккаунт основного пользователя
+        // 1. Трижды пополняем аккаунт основного пользователя
         UserSteps.repeatAction(repeatDepositTimes, () -> depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit));
 
-        //создаём второго пользователя и получаем его токен
+        // 2. Создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
-        //создаём аккаунт для второго пользователя
+        // 3. Создаём аккаунт для второго пользователя
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 4. Выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage =
                 failedTransferMoneyBetweenAccounts(authUserToken, userAccount, secondUserAccount, moneyToTransfer,
                         ResponseSpecs.requestReturnsBadRequest());
 
-        //проверяем сообщение об ошибке
+        // 5. Проверяем сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(TRANSFER_AMOUNT_CANNOT_EXCEED_10000.getValue());
 
-        //проверяем баланс аккаунта основного пользователя
+        // 6. Проверяем баланс аккаунта основного пользователя
         double expectedBalance =
                 BigDecimal.valueOf(moneyToDeposit * repeatDepositTimes).setScale(2, RoundingMode.HALF_UP).doubleValue();
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
-        //проверяем транзакции основного пользователя на перевод
+        // 7. Проверяем транзакции основного пользователя на перевод
         checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_OUT);
 
-        //проверяем баланс аккаунта второго пользователя
+        // 8. Проверяем баланс аккаунта второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(0.0);
 
-        //проверяем транзакции второго пользователя
+        // 9. Проверяем транзакции второго пользователя
         checkNegativeUserTransactions(authTokenUserSecond, secondUserAccount, null);
 
     }
@@ -174,32 +174,32 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         final double depositTransferMoney = RandomData.getMoney();
 
-        //пополняем первый аккаунт пользователя
+        // 1. Пополняем первый аккаунт пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, depositTransferMoney);
 
-        //создаём второй аккаунт для пользователя
+        // 2. Создаём второй аккаунт для пользователя
         final int userAccountSecond = createUserAccount(authUserToken);
 
-        //сохраняем текущее время
+        // 3. Сохраняем текущее время
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        //выполняем перевод с первого аккаунта пользователя на его второй аккаунт
+        // 4. Выполняем перевод с первого аккаунта пользователя на его второй аккаунт
         final TransferResponse transferResponse =
                 successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, userAccountSecond, depositTransferMoney);
 
-        //проверяем значения параметров ответа на post запрос перевода
+        // 5. Проверяем значения параметров ответа на post запрос перевода
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
-        //проверяем общий баланс первого аккаунта пользователя после перевода
+        // 6. Проверяем общий баланс первого аккаунта пользователя после перевода
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //проверяем транзакцию пользователя на перевод с первого аккаунта на второй
+        // 7. Проверяем транзакцию пользователя на перевод с первого аккаунта на второй
         checkPositiveUserTransactions(authUserToken, userAccount, userAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
 
-        //проверяем общий баланс второго аккаунта пользователя после перевода
+        // 8. Проверяем общий баланс второго аккаунта пользователя после перевода
         softly.assertThat(getUserBalance(authUserToken, userAccountSecond)).isEqualTo(depositTransferMoney);
 
-        //проверяем транзакции пользователя по второму аккаунту
+        // 9. Проверяем транзакции пользователя по второму аккаунту
         checkPositiveUserTransactions(authUserToken, userAccountSecond, userAccount, nowTime, Operations.TRANSFER_IN, depositTransferMoney);
 
     }
@@ -211,40 +211,40 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         final Double depositTransferMoney = RandomData.getMoney();
 
-        //пополняем аккаунт основного пользователя
+        // 1. Пополняем аккаунт основного пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, depositTransferMoney);
 
-        //создаём второго пользователя и получаем его токен
+        // 2. Создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
-        //создаём первый аккаунт второго пользователя
+        // 3. Создаём первый аккаунт второго пользователя
         final int secondUserAccountFirst = createUserAccount(authTokenUserSecond);
-        //создаём второй аккаунт второго пользователя
+        // 4. Создаём второй аккаунт второго пользователя
         final int secondUserAccountSecond = createUserAccount(authTokenUserSecond);
 
-        //сохраняем текущее время
+        // 5. Сохраняем текущее время
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        //выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя
+        // 6. Выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя
         final TransferResponse transferResponse = successfulTransferMoneyBetweenAccounts(authUserToken, userAccount,
                 secondUserAccountSecond, depositTransferMoney);
 
-        //проверяем значения параметров ответов на post запрос перевода
+        // 7. Проверяем значения параметров ответов на post запрос перевода
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
-        //проверяем общий баланс аккаунта основного пользователя после перевода
+        // 8. Проверяем общий баланс аккаунта основного пользователя после перевода
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //проверяем транзакцию основного пользователя на перевод
+        // 9. Проверяем транзакцию основного пользователя на перевод
         checkPositiveUserTransactions(authUserToken, userAccount, secondUserAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
 
-        //проверяем общий баланс второго аккаунта второго пользователя после перевода
+        // 10. Проверяем общий баланс второго аккаунта второго пользователя после перевода
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountSecond)).isEqualTo(depositTransferMoney);
 
-        //проверяем транзакцию второго пользователя на полученный перевод
+        // 11. Проверяем транзакцию второго пользователя на полученный перевод
         checkPositiveUserTransactions(authTokenUserSecond, secondUserAccountSecond, userAccount, nowTime,
                 Operations.TRANSFER_IN, depositTransferMoney);
 
-        //проверяем общий баланс первого аккаунта второго пользователя после перевода
+        // 12. Проверяем общий баланс первого аккаунта второго пользователя после перевода
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountFirst)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
     }
@@ -255,30 +255,30 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         final Double transferMoney = RandomData.getMoney();
 
-        //создаём второго пользователя и получаем его токен
+        // 1. Создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
 
-        //создаём аккаунт для второго пользователя
+        // 2. Создаём аккаунт для второго пользователя
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 3. Выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String errorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, secondUserAccount,
                 transferMoney, ResponseSpecs.requestReturnsBadRequest());
 
-        //проверяем сообщение об ошибке
+        // 4. Проверяем сообщение об ошибке
         softly.assertThat(errorMessage).isEqualTo(INVALID_TRANSFER_INSUFFICIENT_FUNDS_OR_INVALID_ACCOUNTS.getValue());
 
-        //Проверяем баланс основного пользователя
+        // 5. Проверяем баланс основного пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //Проверяем транзакции основного пользователя
+        // 6. Проверяем транзакции основного пользователя
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
         softly.assertThat(userFirstTransactions.isEmpty());
 
-        //Проверяем баланс второго пользователя
+        // 7. Проверяем баланс второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //Проверяем транзакции второго пользователя
+        // 8. Проверяем транзакции второго пользователя
         final List<UserTransactionsResponse> userSecondTransactions = getUserTransactions(authTokenUserSecond,
                 secondUserAccount);
         softly.assertThat(userSecondTransactions.isEmpty());
@@ -292,26 +292,26 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         double moneyToDepositTransfer = RandomData.getMoney();
 
-        //создаём второго пользователя и получаем его токен
+        // 1. Создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
 
-        //создаём аккаунт для второго пользователя
+        // 2. Создаём аккаунт для второго пользователя
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
-        //Пополняем аккаунт второго пользователя
+        // 3. Пополняем аккаунт второго пользователя
         depositMoney(authTokenUserSecond, secondUserAccount, moneyToDepositTransfer);
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 4. выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String errorMessage = failedTransferMoneyBetweenAccounts(authUserToken, secondUserAccount,
                 userAccount, moneyToDepositTransfer, ResponseSpecs.requestReturnsForbidden());
 
-        //проверяем сообщение об ошибке
+        // 5. проверяем сообщение об ошибке
         softly.assertThat(errorMessage).isEqualTo(UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
-        //Проверяем баланс основного пользователя
+        // 6. Проверяем баланс основного пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //Проверяем баланс второго пользователя
+        // 7. Проверяем баланс второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(moneyToDepositTransfer);
 
     }
@@ -321,18 +321,18 @@ public class TransferMoneyTests extends BaseTestSenior {
     public void userCannotTransferMoneyFromToSameHisAccount() {
 
         double moneyToDepositTransfer = RandomData.getMoney();
-        //Пополняем аккаунт основного пользователя
+        // 1. Пополняем аккаунт основного пользователя
         depositMoney(authUserToken, userAccount, moneyToDepositTransfer);
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 2. Выполняем запрос по переводу и сохраняем сообщение об ошибке
         //тест падает, т.к. ожидается 400, а отдаётся 200. Писал об этом ранее
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, userAccount,
                 moneyToDepositTransfer, ResponseSpecs.requestReturnsBadRequest());
 
-        //проверяем сообщение об ошибке
+        // 3. Проверяем сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(OPERATION_IS_FORBIDDEN);
 
-        //Проверяем баланс пользователя
+        // 4. Проверяем баланс пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDepositTransfer);
 
     }
@@ -343,20 +343,20 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         double moneyToTransfer = RandomData.getMoney();
 
-        //получаем несуществующий аккаунт
+        // 1. Получаем несуществующий аккаунт
         nonExistingAccount = getMaxExistedAccountId() + 1;
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 2. Выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, nonExistingAccount,
                 moneyToTransfer, ResponseSpecs.requestReturnsBadRequest());
 
-        //проверяем сообщение об ошибке
+        // 3. Проверяем сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(INVALID_TRANSFER_INSUFFICIENT_FUNDS_OR_INVALID_ACCOUNTS.getValue());
 
-        //Проверяем баланс пользователя
+        // 4. Проверяем баланс пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //Проверяем транзакции аккаунта пользователя
+        // 5. Проверяем транзакции аккаунта пользователя
         checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_IN);
 
     }
@@ -367,20 +367,20 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         double moneyToTransfer = RandomData.getMoney();
 
-        //получаем несуществующий аккаунт
+        // 1. Получаем несуществующий аккаунт
         nonExistingAccount = getMaxExistedAccountId() + 1;
 
-        //выполняем запрос по переводу и сохраняем сообщение об ошибке
+        // 2. Выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, nonExistingAccount,
                 userAccount, moneyToTransfer, ResponseSpecs.requestReturnsForbidden());
 
-        //проверяем сообщение об ошибке
+        // 3. Проверяем сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
-        //Проверяем баланс пользователя
+        // 4. Проверяем баланс пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //Проверяем транзакции аккаунта пользователя
+        // 5. Проверяем транзакции аккаунта пользователя
         checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_IN);
     }
 }
