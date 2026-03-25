@@ -1,4 +1,4 @@
-package api_tests.iteraion2_middle;
+package api_tests.iteraion2_senior;
 
 import config.Operations;
 import config.ResponseMessages;
@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import requests.steps.user_steps.UserSteps;
 import specs.ResponseSpecs;
 import utils.RandomData;
 
@@ -16,13 +17,18 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
 import static config.ResponseMessages.*;
+import static requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
+import static requests.steps.admin_steps.AdminSteps.getMaxExistedAccountId;
+import static requests.steps.user_steps.UserSteps.*;
 
-public class TransferMoneyTests extends BaseTestMiddle {
+public class TransferMoneyTests extends BaseTestSenior {
+
+    private ZonedDateTime nowTime;
+    private int nonExistingAccount = 0;
 
     private static Stream<Arguments> diffPositiveValue() {
         return Stream.of(
@@ -38,70 +44,42 @@ public class TransferMoneyTests extends BaseTestMiddle {
     @DisplayName("Позитивный тест: пользователь может переводить деньги на аккаунт другого пользователя")
     public void userCanTransferMoneyToSomeoneElseExistedAccount(double moneyToDeposit, double moneyToTransfer) {
 
+        int repeatDepositTimes = 2;
         //дважды пополняем аккаунт основного пользователя
-        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
-        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
+        UserSteps.repeatAction(repeatDepositTimes, () -> depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit));
 
         //создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
+
         //создаём аккаунт для второго пользователя
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
         //сохраняем текущее время
-        ZonedDateTime nowTime = ZonedDateTime.now(ZoneOffset.UTC);
+        nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        //выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя
+        //выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя и проверяем параметры ответа
         final TransferResponse transferResponse =
                 successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, secondUserAccount, moneyToTransfer);
 
-        //проверяем значения параметров ответов на post запрос перевода
-        softly.assertThat(transferResponse.getSenderAccountId()).isEqualTo(userAccount);
-        softly.assertThat(transferResponse.getReceiverAccountId()).isEqualTo(secondUserAccount);
-        softly.assertThat(transferResponse.getAmount()).isEqualTo(moneyToTransfer);
+        //проверяем сообщение в ответе об успешном переводе
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
         //проверяем общий баланс аккаунта основного пользователя после перевода
-        final double expectedBalanceForFirstUserRawValue = Math.round((moneyToDeposit * 2 - moneyToTransfer) * 100D) / 100D;
+        final double expectedBalanceForFirstUserRawValue =
+                Math.round((moneyToDeposit * repeatDepositTimes - moneyToTransfer) * 100D) / 100D;
         BigDecimal expectedBalanceForFirstUser =
                 BigDecimal.valueOf(expectedBalanceForFirstUserRawValue).setScale(2, RoundingMode.HALF_UP);
 
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalanceForFirstUser.doubleValue());
 
-        //проверяем транзакции основного пользователя
-        final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
-
-        userFirstTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getId()).isGreaterThan(0);
-            softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(30), nowTime.plusSeconds(30));
-        });
-
-        //проверяем транзакцию основного пользователя на перевод
-        final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userFirstTransactionsResponse.getAmount()).isEqualTo(moneyToTransfer);
-        softly.assertThat(userFirstTransactionsResponse.getType()).isEqualTo(Operations.TRANSFER_OUT);
-        softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(secondUserAccount);
+        //проверяем транзакции основного пользователя на перевод
+        UserSteps.checkPositiveUserTransactions(authUserToken, userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT, moneyToTransfer);
 
         //проверяем общий баланс аккаунта второго пользователя после перевода
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(moneyToTransfer);
 
-        //проверяем транзакции второго пользователя
-        final List<UserTransactionsResponse> userSecondTransactions = getUserTransactions(authTokenUserSecond,
-                secondUserAccount);
-
-        userSecondTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getId()).isGreaterThan(0);
-            softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(30), nowTime.plusSeconds(30));
-        });
-
-        //проверяем транзакцию второго пользователя на полученный перевод
-        final UserTransactionsResponse userSecondTransactionsResponse = userSecondTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userSecondTransactionsResponse.getAmount()).isEqualTo(moneyToTransfer);
-        softly.assertThat(userSecondTransactionsResponse.getType()).isEqualTo(Operations.TRANSFER_IN);
-        softly.assertThat(userSecondTransactionsResponse.getRelatedAccountId()).isEqualTo(userAccount);
+        //проверяем транзакции второго пользователя на полученный перевод
+        checkPositiveUserTransactions(authTokenUserSecond, secondUserAccount, userAccount, nowTime, Operations.TRANSFER_IN, moneyToTransfer);
 
     }
 
@@ -118,6 +96,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyToSomeoneElseExistedAccountLessThanMinimumLimit(double moneyToDeposit,
                                                                                        double moneyToTransfer,
                                                                                        String errorMessage) {
+
         //пополняем аккаунт основного пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
 
@@ -138,22 +117,14 @@ public class TransferMoneyTests extends BaseTestMiddle {
         //проверяем баланс аккаунта основного пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDeposit);
 
-        //проверяем транзакции основного пользователя
-        final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
-
-        //проверяем транзакцию основного пользователя на перевод
-        final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userFirstTransactionsResponse.getType()).isNotEqualTo(Operations.TRANSFER_OUT);
+        //проверяем транзакции основного пользователя на перевод
+        UserSteps.checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_OUT);
 
         //проверяем баланс аккаунта второго пользователя
-        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(0.0);
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //проверяем транзакцию второго пользователя на получение перевода
-        final List<UserTransactionsResponse> userSecondUserTransactions = getUserTransactions(authTokenUserSecond, secondUserAccount);
-
-        softly.assertThat(userSecondUserTransactions.isEmpty());
+        checkNegativeUserTransactions(authTokenUserSecond, secondUserAccount, null);
     }
 
 
@@ -164,10 +135,9 @@ public class TransferMoneyTests extends BaseTestMiddle {
         double moneyToDeposit = RandomData.getMoneyFromTo(4000, 5000);
         double moneyToTransfer = 10000.01;
 
+        int repeatDepositTimes = 3;
         //трижды пополняем аккаунт основного пользователя
-        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
-        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
-        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
+        UserSteps.repeatAction(repeatDepositTimes, () -> depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit));
 
         //создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
@@ -183,25 +153,18 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(actualErrorMessage).isEqualTo(TRANSFER_AMOUNT_CANNOT_EXCEED_10000.getValue());
 
         //проверяем баланс аккаунта основного пользователя
-        double expectedBalance = BigDecimal.valueOf(moneyToDeposit * 3).setScale(2, RoundingMode.HALF_UP).doubleValue();
+        double expectedBalance =
+                BigDecimal.valueOf(moneyToDeposit * repeatDepositTimes).setScale(2, RoundingMode.HALF_UP).doubleValue();
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
-        //проверяем транзакции основного пользователя
-        final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
-
-        //проверяем транзакцию основного пользователя на перевод
-        final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userFirstTransactionsResponse.getType()).isNotEqualTo(Operations.TRANSFER_OUT);
+        //проверяем транзакции основного пользователя на перевод
+        checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_OUT);
 
         //проверяем баланс аккаунта второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(0.0);
 
         //проверяем транзакции второго пользователя
-        final List<UserTransactionsResponse> userSecondUserTransactions = getUserTransactions(authTokenUserSecond, secondUserAccount);
-
-        softly.assertThat(userSecondUserTransactions.isEmpty());
+        checkNegativeUserTransactions(authTokenUserSecond, secondUserAccount, null);
 
     }
 
@@ -210,7 +173,6 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCanTransferMoneyBetweenHisAccounts() {
 
         final double depositTransferMoney = RandomData.getMoney();
-        final double expectedZeroBalance = 0.0;
 
         //пополняем первый аккаунт пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, depositTransferMoney);
@@ -219,56 +181,26 @@ public class TransferMoneyTests extends BaseTestMiddle {
         final int userAccountSecond = createUserAccount(authUserToken);
 
         //сохраняем текущее время
-        ZonedDateTime nowTime = ZonedDateTime.now(ZoneOffset.UTC);
+        nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
         //выполняем перевод с первого аккаунта пользователя на его второй аккаунт
         final TransferResponse transferResponse =
                 successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, userAccountSecond, depositTransferMoney);
 
         //проверяем значения параметров ответа на post запрос перевода
-        softly.assertThat(transferResponse.getSenderAccountId()).isEqualTo(userAccount);
-        softly.assertThat(transferResponse.getReceiverAccountId()).isEqualTo(userAccountSecond);
-        softly.assertThat(transferResponse.getAmount()).isEqualTo(depositTransferMoney);
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
         //проверяем общий баланс первого аккаунта пользователя после перевода
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
-
-        //проверяем транзакции пользователя по первому аккаунту
-        final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
-
-        userFirstTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getId()).isGreaterThan(0);
-            softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(30), nowTime.plusSeconds(30));
-        });
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //проверяем транзакцию пользователя на перевод с первого аккаунта на второй
-        final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userFirstTransactionsResponse.getAmount()).isEqualTo(depositTransferMoney);
-        softly.assertThat(userFirstTransactionsResponse.getType()).isEqualTo(Operations.TRANSFER_OUT);
-        softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(userAccountSecond);
+        checkPositiveUserTransactions(authUserToken, userAccount, userAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
 
         //проверяем общий баланс второго аккаунта пользователя после перевода
         softly.assertThat(getUserBalance(authUserToken, userAccountSecond)).isEqualTo(depositTransferMoney);
 
         //проверяем транзакции пользователя по второму аккаунту
-        final List<UserTransactionsResponse> userSecondTransactions = getUserTransactions(authUserToken,
-                userAccountSecond);
-
-        userSecondTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getId()).isGreaterThan(0);
-            softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(30), nowTime.plusSeconds(30));
-        });
-
-        //проверяем транзакцию пользователя на полученный перевод с первого аккаунта
-        final UserTransactionsResponse userSecondTransactionsResponse = userSecondTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userSecondTransactionsResponse.getAmount()).isEqualTo(depositTransferMoney);
-        softly.assertThat(userSecondTransactionsResponse.getType()).isEqualTo(Operations.TRANSFER_IN);
-        softly.assertThat(userSecondTransactionsResponse.getRelatedAccountId()).isEqualTo(userAccount);
+        checkPositiveUserTransactions(authUserToken, userAccountSecond, userAccount, nowTime, Operations.TRANSFER_IN, depositTransferMoney);
 
     }
 
@@ -278,7 +210,6 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void UserCanTransferMoneyToSomeoneElseUserWithTwoExistedAccounts() {
 
         final Double depositTransferMoney = RandomData.getMoney();
-        final double expectedZeroBalance = 0.0;
 
         //пополняем аккаунт основного пользователя
         depositMoneyWOCheckResponse(authUserToken, userAccount, depositTransferMoney);
@@ -291,59 +222,30 @@ public class TransferMoneyTests extends BaseTestMiddle {
         final int secondUserAccountSecond = createUserAccount(authTokenUserSecond);
 
         //сохраняем текущее время
-        ZonedDateTime nowTime = ZonedDateTime.now(ZoneOffset.UTC);
+        nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
         //выполняем перевод с аккаунта основного пользователя на аккаунт второго пользователя
         final TransferResponse transferResponse = successfulTransferMoneyBetweenAccounts(authUserToken, userAccount,
                 secondUserAccountSecond, depositTransferMoney);
 
         //проверяем значения параметров ответов на post запрос перевода
-        softly.assertThat(transferResponse.getSenderAccountId()).isEqualTo(userAccount);
-        softly.assertThat(transferResponse.getReceiverAccountId()).isEqualTo(secondUserAccountSecond);
-        softly.assertThat(transferResponse.getAmount()).isEqualTo(depositTransferMoney);
         softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_SUCCESSFUL.getValue());
 
         //проверяем общий баланс аккаунта основного пользователя после перевода
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
-
-        //проверяем транзакции основного пользователя
-        final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
-
-        userFirstTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getId()).isGreaterThan(0);
-            softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(30), nowTime.plusSeconds(30));
-        });
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //проверяем транзакцию основного пользователя на перевод
-        final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(userFirstTransactionsResponse.getAmount()).isEqualTo(depositTransferMoney);
-        softly.assertThat(userFirstTransactionsResponse.getType()).isEqualTo(Operations.TRANSFER_OUT);
-        softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(secondUserAccountSecond);
+        checkPositiveUserTransactions(authUserToken, userAccount, secondUserAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
 
         //проверяем общий баланс второго аккаунта второго пользователя после перевода
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountSecond)).isEqualTo(depositTransferMoney);
 
-        //проверяем транзакции второго пользователя
-        final List<UserTransactionsResponse> secondUserSecondAccountTransactions = getUserTransactions(authTokenUserSecond,
-                secondUserAccountSecond);
-
-        secondUserSecondAccountTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getId()).isGreaterThan(0);
-            softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(30), nowTime.plusSeconds(30));
-        });
-
         //проверяем транзакцию второго пользователя на полученный перевод
-        final UserTransactionsResponse secondUserSecondAccountTransactionsResponse = secondUserSecondAccountTransactions
-                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
-
-        softly.assertThat(secondUserSecondAccountTransactionsResponse.getAmount()).isEqualTo(depositTransferMoney);
-        softly.assertThat(secondUserSecondAccountTransactionsResponse.getType()).isEqualTo(Operations.TRANSFER_IN);
-        softly.assertThat(secondUserSecondAccountTransactionsResponse.getRelatedAccountId()).isEqualTo(userAccount);
+        checkPositiveUserTransactions(authTokenUserSecond, secondUserAccountSecond, userAccount, nowTime,
+                Operations.TRANSFER_IN, depositTransferMoney);
 
         //проверяем общий баланс первого аккаунта второго пользователя после перевода
-        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountFirst)).isEqualTo(expectedZeroBalance);
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountFirst)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
     }
 
@@ -352,7 +254,6 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyToSomeoneElseExistedAccountWhenHisAccountBalanceIsZero() {
 
         final Double transferMoney = RandomData.getMoney();
-        final double expectedZeroBalance = 0.0;
 
         //создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
@@ -368,17 +269,18 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(errorMessage).isEqualTo(INVALID_TRANSFER_INSUFFICIENT_FUNDS_OR_INVALID_ACCOUNTS.getValue());
 
         //Проверяем баланс основного пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //Проверяем транзакции основного пользователя
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(authUserToken, userAccount);
         softly.assertThat(userFirstTransactions.isEmpty());
 
         //Проверяем баланс второго пользователя
-        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(expectedZeroBalance);
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //Проверяем транзакции второго пользователя
-        final List<UserTransactionsResponse> userSecondTransactions = getUserTransactions(authTokenUserSecond, secondUserAccount);
+        final List<UserTransactionsResponse> userSecondTransactions = getUserTransactions(authTokenUserSecond,
+                secondUserAccount);
         softly.assertThat(userSecondTransactions.isEmpty());
 
     }
@@ -389,7 +291,6 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyFromSomeoneElseExistedAccountToHisOwn() {
 
         double moneyToDepositTransfer = RandomData.getMoney();
-        final double expectedZeroBalance = 0.0;
 
         //создаём второго пользователя и получаем его токен
         final String authTokenUserSecond = createUserAndGetToken();
@@ -408,7 +309,7 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(errorMessage).isEqualTo(UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
         //Проверяем баланс основного пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //Проверяем баланс второго пользователя
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(moneyToDepositTransfer);
@@ -425,8 +326,8 @@ public class TransferMoneyTests extends BaseTestMiddle {
 
         //выполняем запрос по переводу и сохраняем сообщение об ошибке
         //тест падает, т.к. ожидается 400, а отдаётся 200. Писал об этом ранее
-        final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, userAccount, moneyToDepositTransfer,
-                ResponseSpecs.requestReturnsBadRequest());
+        final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, userAccount,
+                moneyToDepositTransfer, ResponseSpecs.requestReturnsBadRequest());
 
         //проверяем сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(OPERATION_IS_FORBIDDEN);
@@ -441,8 +342,9 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyFromToNonExistedAccount() {
 
         double moneyToTransfer = RandomData.getMoney();
-        int nonExistingAccount = getMaxExistedAccountId() + 1;
-        final double expectedZeroBalance = 0.0;
+
+        //получаем несуществующий аккаунт
+        nonExistingAccount = getMaxExistedAccountId() + 1;
 
         //выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, userAccount, nonExistingAccount,
@@ -452,14 +354,10 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(actualErrorMessage).isEqualTo(INVALID_TRANSFER_INSUFFICIENT_FUNDS_OR_INVALID_ACCOUNTS.getValue());
 
         //Проверяем баланс пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //Проверяем транзакции аккаунта пользователя
-        final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
-
-        userTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getType()).isNotEqualTo(Operations.TRANSFER_IN);
-        });
+        checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_IN);
 
     }
 
@@ -468,8 +366,9 @@ public class TransferMoneyTests extends BaseTestMiddle {
     public void userCannotTransferMoneyFromNonExistedAccount() {
 
         double moneyToTransfer = RandomData.getMoney();
-        int nonExistingAccount = getMaxExistedAccountId() + 1;
-        final double expectedZeroBalance = 0.0;
+
+        //получаем несуществующий аккаунт
+        nonExistingAccount = getMaxExistedAccountId() + 1;
 
         //выполняем запрос по переводу и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedTransferMoneyBetweenAccounts(authUserToken, nonExistingAccount,
@@ -479,15 +378,9 @@ public class TransferMoneyTests extends BaseTestMiddle {
         softly.assertThat(actualErrorMessage).isEqualTo(UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
         //Проверяем баланс пользователя
-        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedZeroBalance);
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
         //Проверяем транзакции аккаунта пользователя
-        final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
-
-        userTransactions.forEach(transactions -> {
-            softly.assertThat(transactions.getType()).isNotEqualTo(Operations.TRANSFER_IN);
-        });
-
+        checkNegativeUserTransactions(authUserToken, userAccount, Operations.TRANSFER_IN);
     }
-
 }

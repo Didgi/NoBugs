@@ -1,13 +1,14 @@
-package requests;
+package requests.skelethon;
 
-import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
 import lombok.AllArgsConstructor;
-import models.BaseModel;
+import lombok.Getter;
 
 @AllArgsConstructor
-public abstract class BaseRequester {
+@Getter
+public abstract class HttpBaseRequest {
     protected RequestSpecification requestSpecification;
+    protected EndpointRequests endpointRequests;
     protected ResponseSpecification responseSpecification;
 }
