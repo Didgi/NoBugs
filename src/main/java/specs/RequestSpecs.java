@@ -1,13 +1,11 @@
 package specs;
 
-import config.Users;
+import config.Config;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import lombok.Data;
-import lombok.Setter;
 import models.LoginRequest;
 import requests.skelethon.EndpointRequests;
 import requests.skelethon.requesters.CrudRequester;
@@ -21,6 +19,8 @@ import static config.ApiPath.BASE_URI;
 public class RequestSpecs {
 
     private static Map<String, String> tokenStorage = new HashMap<>();
+    private static final String ADMIN_USERNAME = Config.getProperty("admin_username");
+    private static final String ADMIN_PASSWORD = Config.getProperty("admin_username");
 
     private RequestSpecs() {
     }
@@ -41,17 +41,17 @@ public class RequestSpecs {
     }
 
     public static RequestSpecification withAdminToken() {
-        if (!tokenStorage.containsKey(Users.ADMIN_USERNAME)) {
-            final LoginRequest loginRequestAdmin = LoginRequest.builder().username(Users.ADMIN_USERNAME).
-                    password(Users.ADMIN_PASSWORD).build();
+        if (!tokenStorage.containsKey(ADMIN_USERNAME)) {
+            final LoginRequest loginRequestAdmin = LoginRequest.builder().username(ADMIN_USERNAME).
+                    password(ADMIN_PASSWORD).build();
             String adminToken = new CrudRequester(withoutTokenSpec(), EndpointRequests.LOGIN, ResponseSpecs.requestReturnsOk())
                     .POST(loginRequestAdmin)
                     .assertThat()
                     .extract()
                     .header("Authorization");
-            tokenStorage.put(Users.ADMIN_USERNAME, adminToken);
+            tokenStorage.put(ADMIN_USERNAME, adminToken);
         }
-        return basicRequestSpec().build().headers("Authorization", tokenStorage.get(Users.ADMIN_USERNAME));
+        return basicRequestSpec().build().headers("Authorization", tokenStorage.get(ADMIN_USERNAME));
     }
 
 }

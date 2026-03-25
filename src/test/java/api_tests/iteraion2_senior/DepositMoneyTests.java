@@ -50,29 +50,29 @@ public class DepositMoneyTests extends BaseTestSenior {
     public void userCanDepositHisAccount(double incomingMoney, Number expectedBalance) {
         final DepositRequest depositRequest = new DepositRequest(userAccount, incomingMoney);
 
-        //сохраняем время для проверки времени пополнения
+        // 1. Сохраняем время для проверки времени пополнения
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        //выполняем пополнение аккаунта
+        //2 . Выполняем пополнение аккаунта
         UserAccountResponse userAccountResponse =
                 new ValidatableCrudRequester<UserAccountResponse>(RequestSpecs.withToken(authUserToken),
                         EndpointRequests.DEPOSIT_MONEY, ResponseSpecs.requestReturnsOk())
                         .POST(depositRequest);
 
-        //базово проверяем корректность ответа
+        // 3. Проверяем корректность ответа
         ModelAssertions.assertThatModels(depositRequest, userAccountResponse).match();
 
-        //проверяем ответ детально на запрос пополнения
+        // 4. Проверяем ответ детально на запрос пополнения
         softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getId());
         softly.assertThat(userAccountResponse.getAccountNumber())
                 .isEqualTo(AccountData.ACCOUNT_NUMBER_PREFIX.getValue() + depositRequest.getId());
         softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getBalance());
         softly.assertThat(userAccountResponse.getTransactions()).isNotEmpty();
 
-        //проверяем баланс аккаунта пользователя
+        // 5. Проверяем баланс аккаунта пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
-        //проверяем транзакции пользователя
+        // 6. Проверяем транзакции пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
 
         userTransactions.forEach(transactions -> {
@@ -95,26 +95,26 @@ public class DepositMoneyTests extends BaseTestSenior {
         BigDecimal totalExpectedBalance = BigDecimal.valueOf(firstDepositValue + secondDepositValue)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        //пополняем аккаунт пользователя
+        // 1. Пополняем аккаунт пользователя
         depositMoney(authUserToken, userAccount, firstDepositValue);
 
         final DepositRequest depositRequestSecond = new DepositRequest(userAccount, secondDepositValue);
 
-        //сохраняем время для проверки времени пополнения
+        // 2. Сохраняем время для проверки времени пополнения
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        //выполняем пополнение аккаунта
+        // 3. Выполняем пополнение аккаунта
         final UserAccountResponse userAccountResponse = new ValidatableCrudRequester<UserAccountResponse>
                 (RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY,
                         ResponseSpecs.requestReturnsOk()).POST(depositRequestSecond);
 
-        //базово проверяем корректность ответа
+        // 4. Проверяем корректность ответа
         ModelAssertions.assertThatModels(depositRequestSecond, userAccountResponse).match();
 
-        //проверяем баланс аккаунта пользователя
+        // 5. Проверяем баланс аккаунта пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(totalExpectedBalance.doubleValue());
 
-        //проверяем транзакции пользователя
+        // 6. Проверяем транзакции пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
 
         userTransactions.forEach(transactions -> {
@@ -143,16 +143,16 @@ public class DepositMoneyTests extends BaseTestSenior {
         final Double firstDepositValue = RandomData.getMoney();
         final Double secondDepositValue = RandomData.getMoney();
 
-        //пополняем первый аккаунт пользователя
+        // 1. Пополняем первый аккаунт пользователя
         depositMoney(authUserToken, userAccount, firstDepositValue);
 
-        //пользователя второй аккаунт у пользователя
+        // 2. Пользователя второй аккаунт у пользователя
         final int userAccountSecond = createUserAccount(authUserToken);
 
-        //пополняем второй аккаунт пользователя
+        // 3. Пополняем второй аккаунт пользователя
         depositMoney(authUserToken, userAccountSecond, secondDepositValue);
 
-        //проверяем баланс обоих аккаунтов пользователя
+        // 4. Проверяем баланс обоих аккаунтов пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(firstDepositValue);
         softly.assertThat(getUserBalance(authUserToken, userAccountSecond)).isEqualTo(secondDepositValue);
 
@@ -172,17 +172,17 @@ public class DepositMoneyTests extends BaseTestSenior {
         final DepositRequest depositRequest = DepositRequest
                 .builder().id(userAccount).balance(incomingMoney.doubleValue()).build();
 
-        //выполняем пополнение аккаунта невалидной суммой и сохраняем сообщение об ошибке
+        // 1. Выполняем пополнение аккаунта невалидной суммой и сохраняем сообщение об ошибке
         final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
                 , ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).extract().response().asString();
 
-        //проверяем полученную ошибку с ожидаемой
+        // 2. Проверяем полученную ошибку с ожидаемой
         softly.assertThat(actualErrorMessage).isEqualTo(errorMessage);
 
-        //проверяем баланс аккаунта пользователя
+        // 3. Проверяем баланс аккаунта пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
-        //проверяем транзакции пользователя
+        // 4. Проверяем транзакции пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
 
         softly.assertThat(userTransactions).isEmpty();
@@ -197,17 +197,17 @@ public class DepositMoneyTests extends BaseTestSenior {
         final DepositRequest depositRequest = DepositRequest
                 .builder().id(userAccount).balance(depositMoney).build();
 
-        //выполняем пополнение аккаунта невалидной суммой и сохраняем сообщение об ошибке
+        // 1. Выполняем пополнение аккаунта невалидной суммой и сохраняем сообщение об ошибке
         final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
                 , ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).extract().response().asString();
 
-        //проверяем полученную ошибку с ожидаемой
+        // 2. Проверяем полученную ошибку с ожидаемой
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.DEPOSIT_AMOUNT_CANNOT_EXCEED_5000.getValue());
 
-        //проверяем баланс аккаунта пользователя
+        // 3. Проверяем баланс аккаунта пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //проверяем транзакции пользователя
+        // 4. Проверяем транзакции пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
 
         softly.assertThat(userTransactions).isEmpty();
@@ -224,17 +224,17 @@ public class DepositMoneyTests extends BaseTestSenior {
 
         final DepositRequest depositRequest = DepositRequest.builder().id(secondUserAccount).balance(depositMoney).build();
 
-        //выполняем пополнение чужого аккаунта и сохраняем сообщение об ошибке
+        // 1. Выполняем пополнение чужого аккаунта и сохраняем сообщение об ошибке
         final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
                 , ResponseSpecs.requestReturnsForbidden()).POST(depositRequest).extract().response().asString();
 
-        //проверяем полученную ошибку с ожидаемой
+        // 2. Проверяем полученную ошибку с ожидаемой
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
-        //проверяем баланс аккаунта пользователя
+        // 3. Проверяем баланс аккаунта пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //проверяем транзакции пользователя
+        // 4. Проверяем транзакции пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
 
         softly.assertThat(userTransactions).isEmpty();
@@ -250,17 +250,17 @@ public class DepositMoneyTests extends BaseTestSenior {
         final DepositRequest depositRequest = DepositRequest
                 .builder().id(AdminSteps.getMaxExistedAccountId() + 1).balance(depositMoney).build();
 
-        //выполняем пополнение чужого аккаунта и сохраняем сообщение об ошибке
+        // 1. Выполняем пополнение чужого аккаунта и сохраняем сообщение об ошибке
         final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
                 , ResponseSpecs.requestReturnsForbidden()).POST(depositRequest).extract().response().asString();
 
-        //проверяем полученную ошибку с ожидаемой
+        // 2. Проверяем полученную ошибку с ожидаемой
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
-        //проверяем баланс аккаунта пользователя
+        // 3. Проверяем баланс аккаунта пользователя
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        //проверяем транзакции пользователя
+        // 4. Проверяем транзакции пользователя
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
 
         softly.assertThat(userTransactions).isEmpty();
