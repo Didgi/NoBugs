@@ -33,7 +33,7 @@ public class ChangeUserNameTests extends BaseTestSenior {
     @DisplayName("Позитивный тест: пользователь может изменить имя на другое валидное")
     public void userCanChangeHisNameWithValidData(String updatedUserName) {
 
-        //выполняем запрос на изменение имени пользователя
+        // 1. Выполняем запрос на изменение имени пользователя
         final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(updatedUserName).build();
 
         final ChangeUserResponse changeUserResponse =
@@ -41,11 +41,11 @@ public class ChangeUserNameTests extends BaseTestSenior {
                         EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
                 .PUT(changeUserRequest);
 
-        //проверяем в ответе на запрос имя и сообщение об успешном выполнении
+        // 2. Проверяем в ответе на запрос имя и сообщение об успешном выполнении
         softly.assertThat(changeUserResponse.getCustomer().getName()).isEqualTo(updatedUserName);
         softly.assertThat(changeUserResponse.getMessage()).isEqualTo(ResponseMessages.PROFILE_UPDATED_SUCCESSFULLY.getValue());
 
-        //проверяем имя в информации пользователя
+        // 3. Проверяем имя в информации пользователя
         UsersResponse userInfo = getUserInfo(authUserToken);
         softly.assertThat(userInfo.getName()).isEqualTo(updatedUserName);
     }
@@ -66,17 +66,17 @@ public class ChangeUserNameTests extends BaseTestSenior {
     @DisplayName("Негативный тест: пользователь не может изменить имя указав не валидное")
     public void userCannotChangeHisNameWithInvalidData(String updatedUserName) {
 
-        //Проверяем имя пользователя до изменений
+        // 1. Проверяем имя пользователя до изменений
         softly.assertThat(getUserInfo(authUserToken).getName()).isNull();
 
-        //выполняем изменение имени пользователя на невалидное и сохраняем сообщение об ошибке
+        // 2. Выполняем изменение имени пользователя на невалидное и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedChangeUserName(updatedUserName, authUserToken,
                 ResponseSpecs.requestReturnsBadRequest());
 
-        //проверяем в ответе на запрос имя и сообщение об ошибке
+        // 3. Проверяем в ответе на запрос имя и сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.NAME_MUST_CONTAIN_TWO_WORDS_WITH_LETTERS_ONLY.getValue());
 
-        //проверяем имя в информации пользователя
+        // 4. проверяем имя в информации пользователя
         softly.assertThat(getUserInfo(authUserToken).getName()).isNull();
     }
 
@@ -84,11 +84,11 @@ public class ChangeUserNameTests extends BaseTestSenior {
     @DisplayName("Негативный тест: пользователь не может выполнить запрос на изменение имени с null значением")
     public void userCannotChangeHisNameWithNull() {
 
-        //выполняем изменение имени пользователя указав null и сохраняем сообщение об ошибке
+        // 1. Выполняем изменение имени пользователя указав null и сохраняем сообщение об ошибке
         final String actualErrorMessage = failedChangeUserName(null, authUserToken,
                 ResponseSpecs.requestReturnsInternalServiceError());
 
-        //проверяем ответ
+        // 2. Проверяем ответ
         softly.assertThat(actualErrorMessage.isEmpty());
     }
 
@@ -96,16 +96,16 @@ public class ChangeUserNameTests extends BaseTestSenior {
     @DisplayName("Позитивный тест: пользователь может изменить имя, как у другого пользователя")
     public void userCanChangeHisNameToAnotherUserNameUpdated() {
 
-        //генерируем рандомное имя
+        // 1. Генерируем рандомное имя
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
 
-        //выполняем запрос на изменение имени пользователя и проверяем ответ
+        // 2. Выполняем запрос на изменение имени пользователя и проверяем ответ
         successfulChangeUserName(changeUserRequest, authUserToken);
 
-        //Создаём второго пользователя и получаем его токен
+        // 3. Создаём второго пользователя и получаем его токен
         final String secondUserAuthToken = createUserAndGetToken();
 
-        //выполняем запрос на изменение имени пользователя и проверяем ответ
+        // 4. Выполняем запрос на изменение имени пользователя и проверяем ответ
         successfulChangeUserName(changeUserRequest, secondUserAuthToken);
 
     }
