@@ -5,13 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ChangeUserResponse extends BaseModel{
+public class ChangeUserResponse extends BaseModel {
     private UsersResponse customer;
     private String message;
 }
