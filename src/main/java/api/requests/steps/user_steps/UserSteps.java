@@ -178,13 +178,6 @@ public class UserSteps {
                 .isEqualTo(ResponseMessages.PROFILE_UPDATED_SUCCESSFULLY.getValue());
     }
 
-    public static String failedChangeUserName(String updatedUserName, String userToken,
-                                              ResponseSpecification responseSpecs) {
-        final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(updatedUserName).build();
-        return new CrudRequester(RequestSpecs.withToken(userToken), EndpointRequests.UPDATE_USER, responseSpecs)
-                .PUT(changeUserRequest).extract().response().asString();
-    }
-
     public static void repeatAction(int times, Runnable runnable) {
         for (int i = 0; i < times; i++) {
             runnable.run();
