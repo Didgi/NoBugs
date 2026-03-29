@@ -10,6 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import requests.skelethon.EndpointRequests;
+import requests.skelethon.requesters.CrudRequester;
 import requests.skelethon.requesters.ValidatableCrudRequester;
 import specs.RequestSpecs;
 import specs.ResponseSpecs;
@@ -39,7 +40,7 @@ public class ChangeUserNameTests extends BaseTestSenior {
         final ChangeUserResponse changeUserResponse =
                 new ValidatableCrudRequester<ChangeUserResponse>(RequestSpecs.withToken(authUserToken),
                         EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
-                .PUT(changeUserRequest);
+                        .PUT(changeUserRequest);
 
         // 2. Проверяем в ответе на запрос имя и сообщение об успешном выполнении
         softly.assertThat(changeUserResponse.getCustomer().getName()).isEqualTo(updatedUserName);
@@ -70,8 +71,10 @@ public class ChangeUserNameTests extends BaseTestSenior {
         softly.assertThat(getUserInfo(authUserToken).getName()).isNull();
 
         // 2. Выполняем изменение имени пользователя на невалидное и сохраняем сообщение об ошибке
-        final String actualErrorMessage = failedChangeUserName(updatedUserName, authUserToken,
-                ResponseSpecs.requestReturnsBadRequest());
+        final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(updatedUserName).build();
+        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken),
+                EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsBadRequest())
+                .PUT(changeUserRequest).extract().response().asString();
 
         // 3. Проверяем в ответе на запрос имя и сообщение об ошибке
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.NAME_MUST_CONTAIN_TWO_WORDS_WITH_LETTERS_ONLY.getValue());
@@ -85,8 +88,10 @@ public class ChangeUserNameTests extends BaseTestSenior {
     public void userCannotChangeHisNameWithNull() {
 
         // 1. Выполняем изменение имени пользователя указав null и сохраняем сообщение об ошибке
-        final String actualErrorMessage = failedChangeUserName(null, authUserToken,
-                ResponseSpecs.requestReturnsInternalServiceError());
+        final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().build();
+        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken),
+                EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsInternalServiceError())
+                .PUT(changeUserRequest).extract().response().asString();
 
         // 2. Проверяем ответ
         softly.assertThat(actualErrorMessage.isEmpty());
