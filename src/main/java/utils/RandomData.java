@@ -1,5 +1,6 @@
 package utils;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.ThreadLocalRandom;
@@ -17,6 +18,11 @@ public class RandomData {
     public static Double getMoney() {
         final double randomValue = ThreadLocalRandom.current().nextDouble(0.01, 5000);
         return BigDecimal.valueOf(randomValue).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    public static String randomName(int length) {
+        final String randomed = RandomStringUtils.secure().nextAlphabetic(4).toLowerCase();
+        return randomed + " " + randomed;
     }
 
 }
