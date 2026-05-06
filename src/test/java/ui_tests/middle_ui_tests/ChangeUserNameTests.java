@@ -73,7 +73,7 @@ public class ChangeUserNameTests extends BaseTestMiddle {
     @DisplayName("Негативный тест: проверка, что пользователь видит ошибку при попытке изменения имени на невалидное")
     public void userCannotChangeHisNameWithInvalidData() {
 
-        String expectedUserName = "invalid";
+        String expectedUserName = RandomData.randomInvalidName(5);
 
         //Переходим на страницу редактирования имени пользователя и проверяем наименование страницы редактирования
         //Дожидаемся, пока на UI загрузятся все элементы и он стабилизируется.

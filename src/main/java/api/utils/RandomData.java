@@ -25,4 +25,8 @@ public class RandomData {
         return randomed + " " + randomed;
     }
 
+    public static String randomInvalidName(int length) {
+        return RandomStringUtils.secure().nextAlphabetic(4).toLowerCase();
+    }
+
 }
