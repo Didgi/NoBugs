@@ -1,24 +1,24 @@
 package api_tests.iteraion2_senior;
 
-import config.AccountData;
-import config.Operations;
-import config.ResponseMessages;
-import models.DepositRequest;
-import models.UserAccountResponse;
-import models.UserTransactionsResponse;
-import models.comparison.ModelAssertions;
+import api.config.AccountData;
+import api.config.Operations;
+import api.config.ResponseMessages;
+import api.models.DepositRequest;
+import api.models.UserAccountResponse;
+import api.models.UserTransactionsResponse;
+import api.models.comparison.ModelAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import requests.skelethon.EndpointRequests;
-import requests.skelethon.requesters.CrudRequester;
-import requests.skelethon.requesters.ValidatableCrudRequester;
-import requests.steps.admin_steps.AdminSteps;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
-import utils.RandomData;
+import api.requests.skelethon.EndpointRequests;
+import api.requests.skelethon.requesters.CrudRequester;
+import api.requests.skelethon.requesters.ValidatableCrudRequester;
+import api.requests.steps.admin_steps.AdminSteps;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
+import api.utils.RandomData;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,8 +28,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
-import static requests.steps.user_steps.UserSteps.*;
+import static api.requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
+import static api.requests.steps.user_steps.UserSteps.*;
 
 public class DepositMoneyTests extends BaseTestSenior {
 

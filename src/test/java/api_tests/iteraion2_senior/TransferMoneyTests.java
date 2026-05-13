@@ -1,17 +1,17 @@
 package api_tests.iteraion2_senior;
 
-import config.Operations;
-import config.ResponseMessages;
-import models.TransferResponse;
-import models.UserTransactionsResponse;
+import api.config.Operations;
+import api.config.ResponseMessages;
+import api.models.TransferResponse;
+import api.models.UserTransactionsResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import requests.steps.user_steps.UserSteps;
-import specs.ResponseSpecs;
-import utils.RandomData;
+import api.requests.steps.user_steps.UserSteps;
+import api.specs.ResponseSpecs;
+import api.utils.RandomData;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,10 +20,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static config.ResponseMessages.*;
-import static requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
-import static requests.steps.admin_steps.AdminSteps.getMaxExistedAccountId;
-import static requests.steps.user_steps.UserSteps.*;
+import static api.config.ResponseMessages.*;
+import static api.requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
+import static api.requests.steps.admin_steps.AdminSteps.getMaxExistedAccountId;
+import static api.requests.steps.user_steps.UserSteps.*;
 
 public class TransferMoneyTests extends BaseTestSenior {
 

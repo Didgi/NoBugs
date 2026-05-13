@@ -1,7 +1,9 @@
-package ui_tests.middle_ui_tests;
+package ui_tests.senior_ui_tests;
 
 import api.utils.RandomData;
 import com.codeborne.selenide.Selenide;
+import common.annotations.AdminSession;
+import common.annotations.BrowserAnnotation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ui.pages.MainPage;
@@ -10,8 +12,10 @@ import ui.pages.UserProfilePage;
 import static ui.pages.AlertMessages.*;
 import static ui.pages.MainPage.DEFAULT_USER_NAME;
 
-public class ChangeUserNameTests extends BaseTestMiddle {
+public class ChangeUserNameTests extends BaseTestSenior {
 
+    @AdminSession
+    @BrowserAnnotation({"firefox", "chrome"})
     @Test
     @DisplayName("Позитивный тест: пользователь может изменить имя на другое валидное")
     public void userCanChangeHisNameWithValidData() {
@@ -69,6 +73,7 @@ public class ChangeUserNameTests extends BaseTestMiddle {
                 .checkGreedingText(expectedUpdatedGreeding);
     }
 
+    @AdminSession
     @Test
     @DisplayName("Негативный тест: проверка, что пользователь видит ошибку при попытке изменения имени на невалидное")
     public void userCannotChangeHisNameWithInvalidData() {
@@ -108,6 +113,7 @@ public class ChangeUserNameTests extends BaseTestMiddle {
                 .checkGreedingText(expectedUpdatedGreeding);
     }
 
+    @AdminSession
     @Test
     @DisplayName("Негативный тест: проверка, что пользователь видит ошибку при попытке изменения имени не заполнив поле ввода")
     public void userCannotChangeHisNameWithEmptyField() {

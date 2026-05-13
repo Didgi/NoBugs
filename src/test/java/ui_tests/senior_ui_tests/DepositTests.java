@@ -1,8 +1,11 @@
-package ui_tests.middle_ui_tests;
+package ui_tests.senior_ui_tests;
 
 import api.models.UserTransactionsResponse;
 import api.requests.steps.user_steps.UserSteps;
 import api.utils.RandomData;
+import common.SessionStorage;
+import common.annotations.AdminSession;
+import common.annotations.UserSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ui.pages.MainPage;
@@ -12,15 +15,22 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static ui.pages.AlertMessages.*;
 
-public class DepositTests extends BaseTestMiddle {
+public class DepositTests extends BaseTestSenior {
 
     private double expectedRandomMoney = RandomData.getMoney();
 
+    @AdminSession()
+    @UserSession()
     @Test
     @DisplayName("Позитивный тест: пользователь пополняет свой аккаунт валидной суммой")
     public void userCanDepositHisAccount() {
 
         int expectedListSize = 2;
+
+        //Получаем токен созданного пользователя
+        final String authUserToken = SessionStorage.getUserTokenFromStorage();
+        //Получаем аккаунт созданного пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserNumber();
 
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money
@@ -54,14 +64,20 @@ public class DepositTests extends BaseTestMiddle {
 
     }
 
+    @AdminSession
+    @UserSession(amountAccounts = 2)
     @Test
     @DisplayName("Позитивный тест: пользователь может положить деньги на свои любые аккаунты")
     public void userCanDepositMoneyIntoHisDiffAccounts() {
 
         int expectedListSize = 3;
 
-        //Создаём второй аккаунт для пользователя
-        final int secondUserAccount = UserSteps.createUserAccount(authUserToken);
+        //Получаем токен созданного пользователя
+        final String authUserToken = SessionStorage.getUserTokenFromStorage();
+        //Получаем первый аккаунт созданного пользователя
+        final int userFirstAccount = SessionStorage.getUserAccountByUserNumber();
+        //Получаем второй аккаунт созданного пользователя
+        final int userSecondAccount = SessionStorage.getUserAccountByUserToken(authUserToken,2);
 
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money
@@ -76,12 +92,12 @@ public class DepositTests extends BaseTestMiddle {
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount).
+                .selectAccount(userFirstAccount)
+                .checkSelectedAccountInList(authUserToken, userFirstAccount).
                 inputAmountValue(expectedRandomMoney).clickDepositButton();
 
         // Проверяем сообщение в модальном окне об успешности выполнения Deposit
-        final String expectedAlertText = depositPage.expectedSuccessfullyDepositModalMessage(expectedRandomMoney, userAccount);
+        final String expectedAlertText = depositPage.expectedSuccessfullyDepositModalMessage(expectedRandomMoney, userFirstAccount);
         // Проверяем, что произошёл переход на главную страницу после выполнения Deposit
         depositPage.checkMessageFromModalPageAndAccept(expectedAlertText)
                 .getPage(MainPage.class)
@@ -98,12 +114,12 @@ public class DepositTests extends BaseTestMiddle {
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(secondUserAccount)
-                .checkSelectedAccountInList(authUserToken, secondUserAccount)
+                .selectAccount(userSecondAccount)
+                .checkSelectedAccountInList(authUserToken, userSecondAccount)
                 .inputAmountValue(expectedRandomMoney).clickDepositButton();
 
         final String expectedSecondAlertText = depositPage
-                .expectedSuccessfullyDepositModalMessage(expectedRandomMoney, secondUserAccount);
+                .expectedSuccessfullyDepositModalMessage(expectedRandomMoney, userSecondAccount);
 
         // Проверяем сообщение в модальном окне об успешности выполнения Deposit
         // Проверяем, что произошёл переход на главную страницу после выполнения Deposit
@@ -112,15 +128,17 @@ public class DepositTests extends BaseTestMiddle {
                 .checkMainPageOpened();
 
         // Проверяем через api, что операция Deposit для первого аккаунта выполнена успешно
-        final double actualFirstAccountBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualFirstAccountBalance = UserSteps.getUserBalance(authUserToken, userFirstAccount);
         assertThat(actualFirstAccountBalance).isEqualTo(expectedRandomMoney);
 
         // Проверяем через api, что операция Deposit для второго аккаунта выполнена успешно
-        final double actualSecondAccountBalance = UserSteps.getUserBalance(authUserToken, secondUserAccount);
+        final double actualSecondAccountBalance = UserSteps.getUserBalance(authUserToken, userSecondAccount);
         assertThat(actualSecondAccountBalance).isEqualTo(expectedRandomMoney);
 
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке пополнить свой аккаунт суммой меньше 0.01")
     public void userSeesErrorMessageWhenDepositHisAccountWithLessThanMiniumLimitValue() {
@@ -128,6 +146,11 @@ public class DepositTests extends BaseTestMiddle {
         double negativeMoneyValue = -0.01;
         double zeroBalance = 0.00;
         int expectedListSize = 2;
+
+        //Получаем токен созданного пользователя
+        final String authUserToken = SessionStorage.getUserTokenFromStorage();
+        //Получаем аккаунт созданного пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserNumber();
 
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money
@@ -156,6 +179,8 @@ public class DepositTests extends BaseTestMiddle {
 
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке пополнить свой аккаунт суммой больше 5000")
     public void userSeesErrorMessageWhenDepositHisAccountWithValueMoreThanMaximum5000() {
@@ -163,6 +188,11 @@ public class DepositTests extends BaseTestMiddle {
         double maximumValue = 5000.01;
         double zeroBalance = 0.00;
         int expectedListSize = 2;
+
+        //Получаем токен созданного пользователя
+        final String authUserToken = SessionStorage.getUserTokenFromStorage();
+        //Получаем аккаунт созданного пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserNumber();
 
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money
@@ -190,10 +220,11 @@ public class DepositTests extends BaseTestMiddle {
         assertThat(zeroBalance).isEqualTo(actualUserBalance);
     }
 
+    @AdminSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке нажатия 'Deposit' без выбора аккаунта")
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAccount() {
-
+        
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money
         // Не выбираем никакой аккаунт и не вводим сумму для пополнения.
@@ -208,9 +239,16 @@ public class DepositTests extends BaseTestMiddle {
                 .checkDepositPageOpened();
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке нажатия 'Deposit' без указания суммы")
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAmount() {
+
+        //Получаем токен созданного пользователя
+        final String authUserToken = SessionStorage.getUserTokenFromStorage();
+        //Получаем аккаунт созданного пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserNumber();
 
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money
@@ -237,10 +275,18 @@ public class DepositTests extends BaseTestMiddle {
 
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке нажатия 'Deposit' с пустым аккаунтом, " +
             "хотя ранее он был выбран")
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAccountWhenAccountWasChooseBefore() {
+
+        //Получаем токен созданного пользователя
+        final String authUserToken = SessionStorage.getUserTokenFromStorage();
+        //Получаем аккаунт созданного пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+
 
         //Открываем страницу выполнения депозита
         // Проверяем лого страницы Deposit Money

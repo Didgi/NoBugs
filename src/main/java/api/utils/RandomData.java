@@ -21,12 +21,12 @@ public class RandomData {
     }
 
     public static String randomName(int length) {
-        final String randomed = RandomStringUtils.secure().nextAlphabetic(4).toLowerCase();
+        final String randomed = RandomStringUtils.secure().nextAlphabetic(length).toLowerCase();
         return randomed + " " + randomed;
     }
 
     public static String randomInvalidName(int length) {
-        return RandomStringUtils.secure().nextAlphabetic(4).toLowerCase();
+        return RandomStringUtils.secure().nextAlphabetic(length).toLowerCase();
     }
 
 }

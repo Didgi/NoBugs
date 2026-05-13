@@ -1,15 +1,15 @@
 package ui.pages;
 
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.Selenide;
-import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Alert;
+import ui.elements.BaseElement;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 
 import static api.config.AccountData.ACCOUNT_NUMBER_PREFIX;
 import static api.requests.steps.user_steps.UserSteps.getUserBalance;
@@ -131,5 +131,10 @@ public abstract class BasePage<T extends BasePage> {
     public T clickHomeButton() {
         homeButton.click();
         return (T) this;
+    }
+
+    public <T extends BaseElement> List<T> generateElementList(ElementsCollection elements,
+                                                               Function<SelenideElement, T> constructor) {
+        return elements.stream().map(constructor).toList();
     }
 }

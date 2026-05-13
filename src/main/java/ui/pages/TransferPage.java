@@ -1,17 +1,14 @@
 package ui.pages;
 
 import api.config.AccountData;
-import com.codeborne.selenide.Condition;
-import com.codeborne.selenide.ElementsCollection;
-import com.codeborne.selenide.Selectors;
-import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.*;
 import api.config.Operations;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import ui.elements.UserTransactionHistory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.codeborne.selenide.CollectionCondition.size;
@@ -48,6 +45,8 @@ public class TransferPage extends BasePage<TransferPage> {
 
     private final ElementsCollection transactionsList = $$("ul.list-group li");
 
+    public final static String NAME_REPEAT_BUTTON = "🔁 Repeat";
+
     public final SelenideElement transferModalTitleInRepeatModal = $(byText("\uD83D\uDD01 Repeat Transfer"));
 
     public final SelenideElement transactionInfoInRepeatModal = $(".modal-body").$("p");
@@ -60,13 +59,8 @@ public class TransferPage extends BasePage<TransferPage> {
 
     public final SelenideElement closeButtonTransferInRepeatModal = $("button.btn-close");
 
-
-    public List<String> getTransactionsText() {
-        List<String> texts = new ArrayList<>();
-        transactionsList.forEach(element -> {
-            texts.add(element.text());
-        });
-        return texts;
+    public List<UserTransactionHistory> getTransactionsHistoryList() {
+        return generateElementList(transactionsList, UserTransactionHistory::new);
     }
 
     public TransferPage checkTransferPageOpened() {
@@ -185,35 +179,38 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
-
-    public TransferPage clickRepeatTransaction(Operations operation, double money) {
-        transactionsList.findBy(Condition.text(operation.name())).shouldHave(Condition.text(String.valueOf(money)))
-                .$(Selectors.byText("\uD83D\uDD01 Repeat")).click();
+    public TransferPage clickRepeatButtonTransaction(Operations operation, double money) {
+        getTransactionsHistoryList()
+                .stream()
+                .filter(el -> el.getTransactionInfo().contains(operation.name())
+                        && el.getTransactionInfo().contains(String.valueOf(money)))
+                .findFirst().orElseThrow(() -> new AssertionError("Транзакция не найдена"))
+                .find(byText(NAME_REPEAT_BUTTON)).click();
         return this;
     }
 
-    public TransferPage checkTransferModalTitleRepeatVisible(){
+    public TransferPage checkTransferModalTitleRepeatVisible() {
         transferModalTitleInRepeatModal.shouldBe(visible);
         return this;
     }
 
-    public TransferPage checkTransferModalTitleRepeatNotVisible(){
+    public TransferPage checkTransferModalTitleRepeatNotVisible() {
         transferModalTitleInRepeatModal.shouldBe(not(visible));
         return this;
     }
 
-    public TransferPage checkDefaultValueInAccountListRepeatModal(){
+    public TransferPage checkDefaultValueInAccountListRepeatModal() {
         accountSelectorInRepeatModal.options().findBy(Condition.exactText(DEFAULT_TEXT_IN_ACCOUNT_LIST_SELECTOR))
                 .shouldBe(Condition.visible);
         return this;
     }
 
-    public TransferPage checkAccountSizeInRepeatModal(int expectedSize){
+    public TransferPage checkAccountSizeInRepeatModal(int expectedSize) {
         accountSelectorInRepeatModal.options().shouldHave(size(expectedSize));
         return this;
     }
 
-    public TransferPage selectAccountInRepeatModal(int userAccount){
+    public TransferPage selectAccountInRepeatModal(int userAccount) {
         accountSelectorInRepeatModal.click();
         accountSelectorInRepeatModal.selectOptionByValue(String.valueOf(userAccount));
         return this;
@@ -226,39 +223,47 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
-    public TransferPage inputAmountValueRepeatModal(double value){
+    public TransferPage inputAmountValueRepeatModal(double value) {
         amountFieldInRepeatModal.setValue(String.valueOf(value));
         return this;
     }
 
-    public TransferPage checkTransferButtonNotClickable(){
+    public TransferPage checkTransferButtonNotClickable() {
         transferButton.shouldBe(not(clickable));
         return this;
     }
 
-    public TransferPage clearValueAmountRepeatModal(){
+    public TransferPage clearValueAmountRepeatModal() {
         amountFieldInRepeatModal.clear();
         return this;
     }
 
-    public TransferPage clickCancelButton(){
+    public TransferPage clickCancelButton() {
         cancelButtonTransferInRepeatModal.click();
         return this;
     }
 
-    public TransferPage clickCloseButton(){
+    public TransferPage clickCloseButton() {
         closeButtonTransferInRepeatModal.click();
         return this;
     }
 
-    public boolean checkTransaction(List<String> transactions, double money, Operations operation) {
-        return transactions.stream().anyMatch(el -> el.contains(String.valueOf(money)) &&
-                el.contains(operation.name()));
+    public boolean checkTransaction(List<UserTransactionHistory> transactionsTextTransfer, double money, Operations operation) {
+        return transactionsTextTransfer
+                .stream()
+                .anyMatch(element -> element.getTransactionInfo().contains(operation.name()) &&
+                        element.getTransactionInfo().contains(String.valueOf(money)) &&
+                        element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
     }
 
-    public boolean checkTransaction(List<String> transactions, double money, Operations operation, String name) {
-        return transactions.stream().anyMatch(el -> el.contains(String.valueOf(money)) &&
-                el.contains(operation.name()) && el.contains(TRANSACTION_OWNER + name));
+    public boolean checkTransaction(List<UserTransactionHistory> transactionsTextTransfer,
+                                    double money, Operations operation, String name) {
+        return transactionsTextTransfer
+                .stream()
+                .anyMatch(element -> element.getTransactionInfo().contains(operation.name()) &&
+                        element.getTransactionInfo().contains(String.valueOf(money)) &&
+                        element.getTransactionOwner().contains(TRANSACTION_OWNER + name)
+                        && element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
     }
 
     public String expectedSuccessfulTransferModalMessage(double money, int userAccount) {

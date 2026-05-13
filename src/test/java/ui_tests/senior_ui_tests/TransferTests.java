@@ -1,4 +1,4 @@
-package ui_tests.middle_ui_tests;
+package ui_tests.senior_ui_tests;
 
 import api.config.AccountData;
 import api.config.Operations;
@@ -13,9 +13,12 @@ import api.specs.ResponseSpecs;
 import api.utils.RandomData;
 import api.utils.RandomModelGenerator;
 import com.codeborne.selenide.Selenide;
-import org.junit.jupiter.api.BeforeEach;
+import common.SessionStorage;
+import common.annotations.AdminSession;
+import common.annotations.UserSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ui.elements.UserTransactionHistory;
 import ui.pages.DepositPage;
 
 import java.math.BigDecimal;
@@ -26,23 +29,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static ui.pages.AlertMessages.*;
 import static ui.pages.BasePage.getAccountInfoList;
 
-public class TransferTests extends BaseTestMiddle {
+public class TransferTests extends BaseTestSenior {
 
-    private String secondUserToken;
-    private int accountSecondUser;
-
-    @BeforeEach
-    public void setUpTransfer() {
-        secondUserToken = AdminSteps.createUserAndGetToken();
-        accountSecondUser = UserSteps.createUserAccount(secondUserToken);
-    }
-
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Позитивный тест: пользователь может переводить деньги на аккаунт другого пользователя")
     public void userCanTransferMoneyToSomeoneElseExistedAccount() {
 
         double expectedRandomMoney = RandomData.getMoney();
         int expectedListSize = 2;
+
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
 
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
@@ -51,7 +56,7 @@ public class TransferTests extends BaseTestMiddle {
                 EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk()).PUT(changeUserRequest);
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Открываем страницу выполнения трансфера
         // Проверяем лого страницы Transfer Money
@@ -73,10 +78,10 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(changeUserRequest.getName())
-                .inputRecipientAccount(accountSecondUser)
+                .inputRecipientAccount(secondUserAccount)
                 .inputAmountValue(expectedRandomMoney)
                 .checkConfirmCheckboxUnchecked()
                 .clickConfirmCheckboxToChecked()
@@ -84,7 +89,7 @@ public class TransferTests extends BaseTestMiddle {
 
 
         // Проверяем сообщение в модальном окне и закрываем его
-        final String expectedAlertText = transferPage.expectedSuccessfulTransferModalMessage(expectedRandomMoney, accountSecondUser);
+        final String expectedAlertText = transferPage.expectedSuccessfulTransferModalMessage(expectedRandomMoney, secondUserAccount);
         transferPage.checkMessageFromModalPageAndAccept(expectedAlertText);
 
         //Проверяем, что остались на той же странице
@@ -101,24 +106,31 @@ public class TransferTests extends BaseTestMiddle {
                 .checkConfirmCheckboxUnchecked();
 
         //Проверяем, что баланс аккаунта второго пользователя пополнился после перевода
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedRandomMoney);
 
     }
 
 
+    @AdminSession
+    @UserSession(amountAccounts = 2)
     @Test
     @DisplayName("Позитивный тест: пользователь может переводить деньги между своими же аккаунтами")
     public void userCanTransferMoneyBetweenHisAccounts() {
 
-        int expectedListSize = 3;
 
-        //Создаём второй аккаунт для основного пользователя
-        final int userAccountSecond = UserSteps.createUserAccount(authUserToken);
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем аккаунт первого пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int userAccountSecond = SessionStorage.getUserAccountByUserToken(firstUserToken, 2);
+
+        int expectedListSize = 3;
 
         //Пополняем первый аккаунт основного пользователя
         final double expectedRandomMoney = RandomData.getMoney();
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, userAccount, expectedRandomMoney);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         // Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -136,7 +148,7 @@ public class TransferTests extends BaseTestMiddle {
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .checkSelectedAccountInList(firstUserToken, userAccount)
                 .inputRecipientName(RandomData.randomName(3))
                 .inputRecipientAccount(userAccountSecond)
                 .inputAmountValue(expectedRandomMoney)
@@ -163,19 +175,26 @@ public class TransferTests extends BaseTestMiddle {
                 .checkConfirmCheckboxUnchecked();
 
         //Проверяем, что баланс второго аккаунта основного пользователя пополнился после перевода
-        final double actualFirstUserBalance = UserSteps.getUserBalance(authUserToken, userAccountSecond);
+        final double actualFirstUserBalance = UserSteps.getUserBalance(firstUserToken, userAccountSecond);
         assertThat(actualFirstUserBalance).isEqualTo(expectedRandomMoney);
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Позитивный тест: проверка возможности перевода денег на тот же аккаунт с которого происходит перевод")
     public void userCanTransferMoneyToSameAccount() {
 
         int expectedListSize = 2;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем аккаунт первого пользователя
+        final int userAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+
         //Пополняем аккаунт основного пользователя
         final double expectedRandomMoney = RandomData.getMoney();
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, userAccount, expectedRandomMoney);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -193,7 +212,7 @@ public class TransferTests extends BaseTestMiddle {
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .checkSelectedAccountInList(firstUserToken, userAccount)
                 .inputRecipientName(RandomData.randomName(3))
                 .inputRecipientAccount(userAccount)
                 .inputAmountValue(expectedRandomMoney)
@@ -220,11 +239,13 @@ public class TransferTests extends BaseTestMiddle {
                 .checkConfirmCheckboxUnchecked();
 
         //Проверяем, что баланс аккаунта пользователя не изменился после перевода самому себе
-        final double actualSecondUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(firstUserToken, userAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedRandomMoney);
 
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода отрицательной суммы")
     public void userSeesErrorMessageWhenTransferMoneyLessThanMiniumLimitValue() {
@@ -234,6 +255,15 @@ public class TransferTests extends BaseTestMiddle {
         double expectedZeroBalance = 0.00;
         int expectedListSize = 2;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
 
@@ -241,7 +271,7 @@ public class TransferTests extends BaseTestMiddle {
                 EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk()).PUT(changeUserRequest);
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -258,15 +288,15 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(changeUserRequest.getName())
-                .inputRecipientAccount(accountSecondUser)
+                .inputRecipientAccount(secondUserAccount)
                 .inputAmountValue(negativeMoney)
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -281,20 +311,22 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkSelectedAccountDoesntChange(expectedAccountInfoInList)
                 .checkRecipientNameDoesntChange(changeUserRequest.getName())
-                .checkRecipientAccountDoesntChange(accountSecondUser)
+                .checkRecipientAccountDoesntChange(secondUserAccount)
                 .checkAmountValueDoesntChange(negativeMoney)
                 .checkConfirmCheckboxChecked();
 
 
         //Проверяем, что баланс аккаунта первого пользователя не изменился
-        final double actualUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserAccount);
         assertThat(actualUserBalance).isEqualTo(expectedRandomMoney);
 
         //Проверяем, что баланс аккаунта второго пользователя не изменился
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedZeroBalance);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода суммы больше допустимой 10000")
     public void userSeesErrorMessageWhenTransferMoneyMoreThanMaximumLimitValue() {
@@ -304,6 +336,15 @@ public class TransferTests extends BaseTestMiddle {
         double expectedZeroBalance = 0.00;
         int expectedListSize = 2;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
 
@@ -311,7 +352,7 @@ public class TransferTests extends BaseTestMiddle {
                 EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk()).PUT(changeUserRequest);
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -328,15 +369,15 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(changeUserRequest.getName())
-                .inputRecipientAccount(accountSecondUser)
+                .inputRecipientAccount(secondUserAccount)
                 .inputAmountValue(moreMaximumLimitValueMoney)
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -350,25 +391,36 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkSelectedAccountDoesntChange(expectedAccountInfoInList)
                 .checkRecipientNameDoesntChange(changeUserRequest.getName())
-                .checkRecipientAccountDoesntChange(accountSecondUser)
+                .checkRecipientAccountDoesntChange(secondUserAccount)
                 .checkAmountValueDoesntChange(moreMaximumLimitValueMoney)
                 .checkConfirmCheckboxChecked();
 
         //Проверяем, что баланс аккаунта первого пользователя не изменился
-        final double actualUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserAccount);
         assertThat(actualUserBalance).isEqualTo(expectedRandomMoney);
 
         //Проверяем, что баланс аккаунта второго пользователя не изменился
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedZeroBalance);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег, когда баланс равен 0")
     public void userSeesErrorMessageWhenHisBalanceIsZeroAndHeTransferMoney() {
 
         double expectedZeroBalance = 0.00;
         int expectedListSize = 2;
+
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
 
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
@@ -392,15 +444,15 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(changeUserRequest.getName())
-                .inputRecipientAccount(accountSecondUser)
+                .inputRecipientAccount(secondUserAccount)
                 .inputAmountValue(expectedZeroBalance)
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -415,25 +467,36 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkSelectedAccountDoesntChange(expectedAccountInfoInList)
                 .checkRecipientNameDoesntChange(changeUserRequest.getName())
-                .checkRecipientAccountDoesntChange(accountSecondUser)
+                .checkRecipientAccountDoesntChange(secondUserAccount)
                 .checkAmountValueDoesntChange(expectedZeroBalance)
                 .checkConfirmCheckboxChecked();
 
         //Проверяем, что баланс аккаунта первого пользователя не изменился
-        final double actualUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserAccount);
         assertThat(actualUserBalance).isEqualTo(expectedZeroBalance);
 
         //Проверяем, что баланс аккаунта второго пользователя не изменился
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedZeroBalance);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег без заполнения обязательных полей")
     public void userSeesErrorMessageWhenTryTransferWithoutRequiredFields() {
 
         double expectedRandomMoney = RandomData.getMoney();
         int expectedListSize = 2;
+
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
 
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
@@ -442,7 +505,7 @@ public class TransferTests extends BaseTestMiddle {
                 EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk()).PUT(changeUserRequest);
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Не заполняем ни одно из полей и сразу нажимаем кнопку Transfer
@@ -461,11 +524,11 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -495,11 +558,11 @@ public class TransferTests extends BaseTestMiddle {
                 .checkMessageFromModalPageAndAccept(TRANSFER_ERROR_WITHOUT_REQUIRED_FIELDS.getValue())
                 .checkTransferPageOpened()
                 .checkRecipientNameDoesntChange(changeUserRequest.getName())
-                .inputRecipientAccount(accountSecondUser)
+                .inputRecipientAccount(secondUserAccount)
                 .clickTransferButton()
                 .checkMessageFromModalPageAndAccept(TRANSFER_ERROR_WITHOUT_REQUIRED_FIELDS.getValue())
                 .checkTransferPageOpened()
-                .checkRecipientAccountDoesntChange(accountSecondUser)
+                .checkRecipientAccountDoesntChange(secondUserAccount)
                 .inputAmountValue(expectedRandomMoney)
                 .clickTransferButton()
                 .checkMessageFromModalPageAndAccept(TRANSFER_ERROR_WITHOUT_REQUIRED_FIELDS.getValue())
@@ -509,14 +572,16 @@ public class TransferTests extends BaseTestMiddle {
                 .clickTransferButton();
 
         // Проверяем сообщение в модальном окне и закрываем его
-        final String expectedSuccessfulAlertText = transferPage.expectedSuccessfulTransferModalMessage(expectedRandomMoney, accountSecondUser);
+        final String expectedSuccessfulAlertText = transferPage.expectedSuccessfulTransferModalMessage(expectedRandomMoney, secondUserAccount);
         transferPage.checkMessageFromModalPageAndAccept(expectedSuccessfulAlertText);
 
         //Проверяем, что баланс аккаунта второго пользователя пополнился после перевода
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedRandomMoney);
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег на несуществующий аккаунт")
     public void userSeesErrorMessageWhenTransferMoneyToUnexistedAccount() {
@@ -525,11 +590,16 @@ public class TransferTests extends BaseTestMiddle {
         String randomRecipientName = RandomData.randomName(3);
         int expectedListSize = 2;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+
         //Находим максимальный ID аккаунт пользователя
         final int maxExistedAccountId = AdminSteps.getMaxExistedAccountId();
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -546,15 +616,15 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(randomRecipientName)
                 .inputRecipientAccount(maxExistedAccountId + 1)
                 .inputAmountValue(expectedRandomMoney)
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -574,10 +644,12 @@ public class TransferTests extends BaseTestMiddle {
                 .checkConfirmCheckboxChecked();
 
         //Проверяем, что баланс аккаунта основного пользователя не изменился
-        final double actualSecondUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedRandomMoney);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег с указанием " +
             " имени пользователя аккаунта другим регистром, когда имя задано")
@@ -587,6 +659,15 @@ public class TransferTests extends BaseTestMiddle {
         double zeroBalance = 0.00;
         int expectedListSize = 2;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
 
@@ -594,7 +675,7 @@ public class TransferTests extends BaseTestMiddle {
                 EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk()).PUT(changeUserRequest);
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Открываем страницу выполнения трансфера
         // Проверяем лого страницы Transfer Money
@@ -616,16 +697,16 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(changeUserRequest.getName().toUpperCase())
-                .inputRecipientAccount(accountSecondUser)
+                .inputRecipientAccount(secondUserAccount)
                 .inputAmountValue(expectedRandomMoney)
                 .checkConfirmCheckboxUnchecked()
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -639,19 +720,21 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkSelectedAccountDoesntChange(expectedAccountInfoInList)
                 .checkRecipientNameDoesntChange(changeUserRequest.getName().toUpperCase())
-                .checkRecipientAccountDoesntChange(accountSecondUser)
+                .checkRecipientAccountDoesntChange(secondUserAccount)
                 .checkAmountValueDoesntChange(expectedRandomMoney)
                 .checkConfirmCheckboxChecked();
 
         //Проверяем, что баланс аккаунта основного пользователя не изменился
-        final double actualUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserAccount);
         assertThat(actualUserBalance).isEqualTo(expectedRandomMoney);
 
         //Проверяем, что баланс аккаунта второго пользователя не изменился
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(zeroBalance);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег с указанием " +
             " аккаунта пользователя другим регистром")
@@ -660,6 +743,15 @@ public class TransferTests extends BaseTestMiddle {
         double zeroBalance = 0.00;
         int expectedListSize = 2;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         //Устанавливаем имя второго пользователю
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
 
@@ -667,7 +759,7 @@ public class TransferTests extends BaseTestMiddle {
                 EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk()).PUT(changeUserRequest);
 
         //Пополняем аккаунт первого пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, expectedRandomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, expectedRandomMoney);
 
         //Открываем страницу выполнения трансфера
         // Проверяем лого страницы Transfer Money
@@ -689,16 +781,16 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(firstUserAccount)
+                .checkSelectedAccountInList(firstUserToken, firstUserAccount)
                 .inputRecipientName(changeUserRequest.getName())
-                .inputRecipientAccount(AccountData.ACCOUNT_NUMBER_PREFIX.getValue().toLowerCase() + accountSecondUser)
+                .inputRecipientAccount(AccountData.ACCOUNT_NUMBER_PREFIX.getValue().toLowerCase() + secondUserAccount)
                 .inputAmountValue(expectedRandomMoney)
                 .checkConfirmCheckboxUnchecked()
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccount);
 
         // Проверяем сообщение в модальном окне и закрываем его
         //Проверяем, что остались на той же странице
@@ -720,19 +812,21 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkSelectedAccountDoesntChange(expectedAccountInfoInList)
                 .checkRecipientNameDoesntChange(changeUserRequest.getName())
-                .checkRecipientAccountDoesntChange(AccountData.ACCOUNT_NUMBER_PREFIX.getValue().toLowerCase() + accountSecondUser)
+                .checkRecipientAccountDoesntChange(AccountData.ACCOUNT_NUMBER_PREFIX.getValue().toLowerCase() + secondUserAccount)
                 .checkAmountValueDoesntChange(expectedRandomMoney)
                 .checkConfirmCheckboxChecked();
 
         //Проверяем, что баланс аккаунта основного пользователя не изменился
-        final double actualUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserAccount);
         assertThat(actualUserBalance).isEqualTo(expectedRandomMoney);
 
         //Проверяем, что баланс аккаунта второго пользователя не изменился
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(zeroBalance);
     }
 
+    @AdminSession(amountUsers = 1)
+    @UserSession(amountAccounts = 2)
     @Test
     @DisplayName("Позитивный тест: проверка, что пользователь может просмотреть выполненные транзакции по своим аккаунтам")
     public void userCanSeeHisTransactionHistory() {
@@ -742,13 +836,17 @@ public class TransferTests extends BaseTestMiddle {
         //Не отображаются транзакции по переводу если не выполнить рефреш
         //Вопрос. Какая ожидается сортировка при просмотре списка транзакций? Из-за этого не стал писать проверки на порядок
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем первый аккаунт первого пользователя
+        final int userFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем второй аккаунт второго пользователя
+        final int userSecondAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 2);
+
         int expectedTransactions = 0;
         int expectedListSize = 3;
         double randomMoneyForFirstAccount = RandomData.getMoney();
         double randomMoneyForSecondAccount = RandomData.getMoney();
-
-        //Создаём второй аккаунт для пользователя
-        final int userAccountSecond = UserSteps.createUserAccount(authUserToken);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Переходим на вкладку TransferAgain и проверяем, что отображается строка поиска
@@ -761,8 +859,8 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransactionsListSize(expectedTransactions);
 
         //Пополняем оба аккаунта пользователя разными суммами
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoneyForFirstAccount);
-        UserSteps.depositMoney(authUserToken, userAccountSecond, randomMoneyForSecondAccount);
+        UserSteps.depositMoney(firstUserToken, userFirstAccount, randomMoneyForFirstAccount);
+        UserSteps.depositMoney(firstUserToken, userSecondAccount, randomMoneyForSecondAccount);
 
         //Выполняем рефреш
         Selenide.refresh();
@@ -777,10 +875,10 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferAgainPageOpened()
                 .checkTransactionsListSize(expectedTransactions);
 
-        //Проверяем, что каждая транзакция содержит тип DEPOSIT и сумма, которой пополняется каждый аккаунт
-        final List<String> transactionsTextDeposit = transferPage.getTransactionsText();
-        assertThat(transferPage.checkTransaction(transactionsTextDeposit, randomMoneyForFirstAccount, Operations.DEPOSIT)).isTrue();
-        assertThat(transferPage.checkTransaction(transactionsTextDeposit, randomMoneyForSecondAccount, Operations.DEPOSIT)).isTrue();
+        //Проверяем, что каждая транзакция содержит тип DEPOSIT и сумму, которой пополняется каждый аккаунт
+        final List<UserTransactionHistory> transactionsHistoryList = transferPage.getTransactionsHistoryList();
+        assertThat(transferPage.checkTransaction(transactionsHistoryList, randomMoneyForFirstAccount, Operations.DEPOSIT)).isTrue();
+        assertThat(transferPage.checkTransaction(transactionsHistoryList, randomMoneyForSecondAccount, Operations.DEPOSIT)).isTrue();
 
         //Переходим обратно на вкладку New Transfer и проверяем, что отображается наименование вкладки
         // Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -797,17 +895,17 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(userFirstAccount)
+                .checkSelectedAccountInList(firstUserToken, userFirstAccount)
                 .inputRecipientName(RandomData.randomName(3))
-                .inputRecipientAccount(userAccountSecond)
+                .inputRecipientAccount(userSecondAccount)
                 .inputAmountValue(randomMoneyForFirstAccount)
                 .clickConfirmCheckboxToChecked()
                 .clickTransferButton();
 
         // Проверяем сообщение в модальном окне об успешности выполнения Transfer и закрываем его
         final String expectedAlertText =
-                transferPage.expectedSuccessfulTransferModalMessage(randomMoneyForFirstAccount, userAccountSecond);
+                transferPage.expectedSuccessfulTransferModalMessage(randomMoneyForFirstAccount, userSecondAccount);
         transferPage.checkMessageFromModalPageAndAccept(expectedAlertText);
 
         //Выполняем рефреш, чтобы появились транзакции по переводу
@@ -823,13 +921,16 @@ public class TransferTests extends BaseTestMiddle {
 
         //Проверяем, что две транзакции содержат тип DEPOSIT и сумму, которой пополнялся каждый аккаунт
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT и сумму перевода
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyForFirstAccount, Operations.DEPOSIT)).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyForSecondAccount, Operations.DEPOSIT)).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyForFirstAccount, Operations.TRANSFER_OUT)).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyForFirstAccount, Operations.TRANSFER_IN)).isTrue();
+
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Позитивный тест: проверка, что пользователь может находить свои транзакции по username/name")
     public void userCanFindHisTransactionHistoryByUsernameName() {
@@ -838,14 +939,19 @@ public class TransferTests extends BaseTestMiddle {
         int expectedListSize = 3;
         double randomMoney = RandomData.getMoney();
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем первый аккаунт первого пользователя
+        final int userFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+
         //Получаем информацию о пользователе
-        final UsersResponse userInfo = UserSteps.getUserInfo(authUserToken);
+        final UsersResponse userInfo = UserSteps.getUserInfo(firstUserToken);
 
         //Пополняем первый аккаунт пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoney);
+        UserSteps.depositMoney(firstUserToken, userFirstAccount, randomMoney);
 
         //Создаём второй аккаунт для пользователя
-        final int userAccountSecond = UserSteps.createUserAccount(authUserToken);
+        final int userAccountSecond = UserSteps.createUserAccount(firstUserToken);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Проверяем значение по-умолчанию в выпадающем списке Select Account
@@ -863,8 +969,8 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
-                .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .selectAccount(userFirstAccount)
+                .checkSelectedAccountInList(firstUserToken, userFirstAccount)
                 .inputRecipientName(RandomData.randomName(3))
                 .inputRecipientAccount(userAccountSecond)
                 .inputAmountValue(randomMoney)
@@ -897,7 +1003,8 @@ public class TransferTests extends BaseTestMiddle {
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT, сумму перевода и username пользователя
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
+
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoney, Operations.DEPOSIT, userInfo.getUsername())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoney, Operations.TRANSFER_OUT, userInfo.getUsername())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoney, Operations.TRANSFER_IN, userInfo.getUsername())).isTrue();
@@ -905,7 +1012,7 @@ public class TransferTests extends BaseTestMiddle {
         //Для пользователя задаём имя
         final ChangeUserRequest changeUserRequest = RandomModelGenerator.generate(ChangeUserRequest.class);
 
-        new ValidatableCrudRequester<UsersResponse>(RequestSpecs.withToken(authUserToken), EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
+        new ValidatableCrudRequester<UsersResponse>(RequestSpecs.withToken(firstUserToken), EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
                 .PUT(changeUserRequest);
 
         //Если сделать следующие шаги сразу после изменения имени без рефреша, то при попытке
@@ -924,7 +1031,7 @@ public class TransferTests extends BaseTestMiddle {
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT, сумму перевода и name пользователя
-        final List<String> transactionsTextName = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextName = transferPage.getTransactionsHistoryList();
 
         assertThat(transferPage.checkTransaction(transactionsTextName, randomMoney, Operations.DEPOSIT, changeUserRequest.getName())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextName, randomMoney, Operations.TRANSFER_OUT, changeUserRequest.getName())).isTrue();
@@ -941,7 +1048,7 @@ public class TransferTests extends BaseTestMiddle {
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT, сумму перевода и name пользователя
 
-        final List<String> transactionsTextUsernameUpperCase = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextUsernameUpperCase = transferPage.getTransactionsHistoryList();
 
         assertThat(transferPage.checkTransaction(transactionsTextUsernameUpperCase, randomMoney, Operations.DEPOSIT, changeUserRequest.getName())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextUsernameUpperCase, randomMoney, Operations.TRANSFER_OUT, changeUserRequest.getName())).isTrue();
@@ -958,7 +1065,7 @@ public class TransferTests extends BaseTestMiddle {
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT, сумму перевода и name пользователя
 
-        final List<String> transactionsTextUsernamePartially = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextUsernamePartially = transferPage.getTransactionsHistoryList();
 
         assertThat(transferPage.checkTransaction(transactionsTextUsernamePartially, randomMoney, Operations.DEPOSIT, changeUserRequest.getName())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextUsernamePartially, randomMoney, Operations.TRANSFER_OUT, changeUserRequest.getName())).isTrue();
@@ -975,13 +1082,15 @@ public class TransferTests extends BaseTestMiddle {
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT, сумму перевода и name пользователя
 
-        final List<String> transactionsTextNamePartially = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextNamePartially = transferPage.getTransactionsHistoryList();
 
         assertThat(transferPage.checkTransaction(transactionsTextNamePartially, randomMoney, Operations.DEPOSIT, changeUserRequest.getName())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextNamePartially, randomMoney, Operations.TRANSFER_OUT, changeUserRequest.getName())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextNamePartially, randomMoney, Operations.TRANSFER_IN, changeUserRequest.getName())).isTrue();
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка, что пользователь не может находить чужие транзакции по username/name")
     public void userCannotFindTransactionHistoryByOtherUsers() {
@@ -990,11 +1099,20 @@ public class TransferTests extends BaseTestMiddle {
 
         final double randomMoney = RandomData.getMoney();
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         //Пополняем баланс только аккаунта для первого пользователя через api
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, randomMoney);
 
         //Выполняем перевод с аккаунта первого пользователя на аккаунт второго пользователя через api
-        UserSteps.successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, accountSecondUser, randomMoney);
+        UserSteps.successfulTransferMoneyBetweenAccounts(firstUserToken, firstUserAccount, secondUserAccount, randomMoney);
 
         //Получаем информацию о втором пользователе
         final UsersResponse secondUserInfo = UserSteps.getUserInfo(secondUserToken);
@@ -1011,10 +1129,12 @@ public class TransferTests extends BaseTestMiddle {
                 .inputValueInSearchField(secondUserInfo.getUsername())
                 .clickSearchTransactionsButton();
 
-        final List<String> transactionsTexts = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTexts = transferPage.getTransactionsHistoryList();
         assertThat(transferPage.checkTransaction(transactionsTexts, randomMoney, Operations.TRANSFER_IN, secondUserInfo.getUsername())).isFalse();
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке поиска транзакций с указанием " +
             "несуществующего username/name")
@@ -1023,11 +1143,20 @@ public class TransferTests extends BaseTestMiddle {
         double randomMoney = RandomData.getMoney();
         int expectedTransactions = 0;
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем аккаунт первого пользователя
+        final int firstUserAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         //Пополняем баланс только аккаунта для первого пользователя через api
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoney);
+        UserSteps.depositMoney(firstUserToken, firstUserAccount, randomMoney);
 
         //Выполняем перевод с аккаунта первого пользователя на аккаунт второго пользователя через api
-        UserSteps.successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, accountSecondUser, randomMoney);
+        UserSteps.successfulTransferMoneyBetweenAccounts(firstUserToken, firstUserAccount, secondUserAccount, randomMoney);
 
         //Авторизуемся под первым пользователем и переходим на вкладку 'New Transfer'
         // и проверяем, что отображается наименование страницы
@@ -1045,6 +1174,8 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransactionsListSize(expectedTransactions);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession(amountAccounts = 2)
     @Test
     @DisplayName("Позитивный тест: проверка, что пользователь может выполнить повторно ранее выполненные " +
             "транзакции с типом DEPOSIT")
@@ -1054,22 +1185,30 @@ public class TransferTests extends BaseTestMiddle {
         //вызывается операция Transfer и это приводит к ошибке, т.к. используется значение Amount,
         //которое уже больше, чем баланс первого аккаунта
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем первый аккаунт первого пользователя
+        final int firstUserFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем второго первого пользователя
+        final int firstUserSecondAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 2);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
         int expectedTransactions = 3;
         double randomMoneyDeposit = RandomData.getMoneyFromTo(3000, 5000);
         double randomMoneyTransfer = RandomData.getMoneyFromTo(2000, 2999);
         int expectedListSize = 3;
 
         //Получаем информацию о пользователе
-        final UsersResponse userInfo = UserSteps.getUserInfo(authUserToken);
-
-        //Создаём второй аккаунт для основного пользователя
-        final int userAccountSecond = UserSteps.createUserAccount(authUserToken);
+        final UsersResponse userInfo = UserSteps.getUserInfo(firstUserToken);
 
         //Пополняем первый аккаунт основного пользователя
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoneyDeposit);
+        UserSteps.depositMoney(firstUserToken, firstUserFirstAccount, randomMoneyDeposit);
 
         //Переводим деньги с первого на второй аккаунт пользователя
-        UserSteps.successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, userAccountSecond, randomMoneyTransfer);
+        UserSteps.successfulTransferMoneyBetweenAccounts(firstUserToken, firstUserFirstAccount, firstUserSecondAccount, randomMoneyTransfer);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Переходим на вкладку Transfer Again и проверяем, что отображается строка поиска
@@ -1089,19 +1228,19 @@ public class TransferTests extends BaseTestMiddle {
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что остальные две транзакции содержат тип TRANSFER_IN и TRANSFER_OUT, сумму перевода и username пользователя
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyDeposit, Operations.DEPOSIT, userInfo.getUsername())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyTransfer, Operations.TRANSFER_OUT, userInfo.getUsername())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyTransfer, Operations.TRANSFER_IN, userInfo.getUsername())).isTrue();
 
         //Нажимаем кнопку Repeat для транзакции Deposit и проверяем, что открылось модальное окно повтора транзакции
         transferPage
-                .clickRepeatTransaction(Operations.DEPOSIT, randomMoneyDeposit)
+                .clickRepeatButtonTransaction(Operations.DEPOSIT, randomMoneyDeposit)
                 .checkTransferModalTitleRepeatVisible();
 
         //Проверяем текст с подтверждением транзакции и номером аккаунтом на который ранее производилось пополнение
         final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
-        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + userAccount;
+        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + firstUserFirstAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
         //Проверяем значение по-умолчанию в выпадающем списке аккаунтов
@@ -1110,11 +1249,11 @@ public class TransferTests extends BaseTestMiddle {
         transferPage
                 .checkDefaultValueInAccountListRepeatModal()
                 .checkAccountSizeInRepeatModal(expectedListSize)
-                .selectAccountInRepeatModal(userAccount);
+                .selectAccountInRepeatModal(firstUserFirstAccount);
 
         //Проверяем отображаемый аккаунт в списке
         final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserFirstAccount);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
         //Проверяем, что поле Amount содержит значение указанное в транзакции
@@ -1126,15 +1265,17 @@ public class TransferTests extends BaseTestMiddle {
 
         // Проверяем сообщение в модальном окне об успешности выполнения Deposit и закрываем его
         final String expectedAlertText =
-                transferPage.getPage(DepositPage.class).expectedSuccessfullyDepositModalMessage(randomMoneyDeposit, userAccount);
+                transferPage.getPage(DepositPage.class).expectedSuccessfullyDepositModalMessage(randomMoneyDeposit, firstUserFirstAccount);
         transferPage.checkMessageFromModalPageAndAccept(expectedAlertText);
 
         //Проверяем, что баланс первого аккаунта второго пользователя пополнился после перевода
         final double expectedBalanceFirstAccount = randomMoneyDeposit - randomMoneyTransfer + randomMoneyDeposit;
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedBalanceFirstAccount);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Позитивный тест: проверка, что пользователь может выполнить повторно ранее выполненные " +
             "транзакции c типом TRANSFER_OUT")
@@ -1149,13 +1290,24 @@ public class TransferTests extends BaseTestMiddle {
         double randomMoneyDeposit = RandomData.getMoneyFromTo(4000, 5000);
         double randomMoneyTransfer = RandomData.getMoneyFromTo(1000, 2000);
         int expectedListSize = 2;
-        UsersResponse userInfo = UserSteps.getUserInfo(authUserToken);
+
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем первый аккаунт первого пользователя
+        final int firstUserFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
+
+        UsersResponse userInfo = UserSteps.getUserInfo(firstUserToken);
 
         //Пополняем аккаунт первого пользователя любой рандомной суммой
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoneyDeposit);
+        UserSteps.depositMoney(firstUserToken, firstUserFirstAccount, randomMoneyDeposit);
 
         //Выполняем перевод с аккаунта первого пользователя на аккаунт второго пользователя
-        UserSteps.successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, accountSecondUser, randomMoneyTransfer);
+        UserSteps.successfulTransferMoneyBetweenAccounts(firstUserToken, firstUserFirstAccount, secondUserAccount, randomMoneyTransfer);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Переходим на вкладку Transfer Again и проверяем, что отображается строка поиска
@@ -1176,18 +1328,19 @@ public class TransferTests extends BaseTestMiddle {
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что другая транзакция содержит тип TRANSFER_OUT, сумму перевода и username пользователя
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
+
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyDeposit, Operations.DEPOSIT, userInfo.getUsername())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyTransfer, Operations.TRANSFER_OUT, userInfo.getUsername())).isTrue();
 
         //Нажимаем кнопку Repeat для транзакции Transfer и проверяем, что открылось модальное окно повтора транзакции
         transferPage
-                .clickRepeatTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer)
+                .clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer)
                 .checkTransferModalTitleRepeatVisible();
 
         //Проверяем текст с подтверждением транзакции и номером аккаунтом на который ранее производилось пополнение
         final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
-        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + accountSecondUser;
+        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
         //Проверяем значение по-умолчанию в выпадающем списке аккаунтов
@@ -1196,11 +1349,11 @@ public class TransferTests extends BaseTestMiddle {
         transferPage
                 .checkDefaultValueInAccountListRepeatModal()
                 .checkAccountSizeInRepeatModal(expectedListSize)
-                .selectAccountInRepeatModal(userAccount);
+                .selectAccountInRepeatModal(firstUserFirstAccount);
 
         //Проверяем отображаемый аккаунт в списке
         final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserFirstAccount);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
         //Проверяем, что поле Amount содержит значение указанное в транзакции
@@ -1211,16 +1364,18 @@ public class TransferTests extends BaseTestMiddle {
                 .clickTransferButton();
 
         // Проверяем сообщение в модальном окне об успешности выполнения Deposit и закрываем его
-        final String expectedAlertText = transferPage.expectedSuccessfulTransferModalMessage(randomMoneyDeposit, accountSecondUser);
+        final String expectedAlertText = transferPage.expectedSuccessfulTransferModalMessage(randomMoneyDeposit, secondUserAccount);
         transferPage.checkMessageFromModalPageAndAccept(expectedAlertText);
 
 
         //Проверяем, что баланс аккаунта второго пользователя пополнился после перевода
         final double expectedSecondUserBalance = randomMoneyTransfer + randomMoneyTransfer;
-        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, accountSecondUser);
+        final double actualSecondUserBalance = UserSteps.getUserBalance(secondUserToken, secondUserAccount);
         assertThat(actualSecondUserBalance).isEqualTo(expectedSecondUserBalance);
     }
 
+    @AdminSession(amountUsers = 2)
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка, что пользователь не может выполнить повторно ранее выполненные " +
             "транзакции, если указано значение меньше 0.01")
@@ -1231,13 +1386,23 @@ public class TransferTests extends BaseTestMiddle {
         double randomMoneyTransfer = RandomData.getMoneyFromTo(2000, 3000);
         double zeroMoney = 0.00;
         int expectedListSize = 2;
-        UsersResponse userInfo = UserSteps.getUserInfo(authUserToken);
+
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем токен второго пользователя
+        final String secondUserToken = SessionStorage.getUserTokenFromStorage(2);
+        //Получаем первый аккаунт первого пользователя
+        final int firstUserFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+        //Получаем аккаунт второго пользователя
+        final int secondUserAccount = SessionStorage.getUserAccountByUserToken(secondUserToken, 1);
+
+        UsersResponse userInfo = UserSteps.getUserInfo(firstUserToken);
 
         //Пополняем аккаунт первого пользователя любой рандомной суммой
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoneyDeposit);
+        UserSteps.depositMoney(firstUserToken, firstUserFirstAccount, randomMoneyDeposit);
 
         //Выполняем перевод с аккаунта первого пользователя на аккаунт второго пользователя
-        UserSteps.successfulTransferMoneyBetweenAccounts(authUserToken, userAccount, accountSecondUser, randomMoneyTransfer);
+        UserSteps.successfulTransferMoneyBetweenAccounts(firstUserToken, firstUserFirstAccount, secondUserAccount, randomMoneyTransfer);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Переходим на вкладку Transfer Again и проверяем, что отображается строка поиска
@@ -1257,17 +1422,18 @@ public class TransferTests extends BaseTestMiddle {
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
         //Проверяем, что другая транзакция содержит тип TRANSFER_OUT, сумму перевода и username пользователя
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
+
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyDeposit, Operations.DEPOSIT, userInfo.getUsername())).isTrue();
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyTransfer, Operations.TRANSFER_OUT, userInfo.getUsername())).isTrue();
 
         //Нажимаем кнопку Repeat для транзакции Transfer и проверяем, что открылось модальное окно повтора транзакции
-        transferPage.clickRepeatTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer);
+        transferPage.clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer);
         transferPage.checkTransferModalTitleRepeatVisible();
 
         //Проверяем текст с подтверждением транзакции и номером аккаунтом на который ранее производилось пополнение
         final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
-        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + accountSecondUser;
+        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
         //Проверяем значение по-умолчанию в выпадающем списке аккаунтов
@@ -1276,11 +1442,11 @@ public class TransferTests extends BaseTestMiddle {
         transferPage
                 .checkDefaultValueInAccountListRepeatModal()
                 .checkAccountSizeInRepeatModal(expectedListSize)
-                .selectAccountInRepeatModal(userAccount);
+                .selectAccountInRepeatModal(firstUserFirstAccount);
 
         //Проверяем отображаемый аккаунт в списке
         final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
-        final String expectedAccountInfoInList = getAccountInfoList(authUserToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserFirstAccount);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
         //Проверяем, что поле Amount содержит значение указанное в транзакции
@@ -1297,10 +1463,12 @@ public class TransferTests extends BaseTestMiddle {
         //Проверяем, что баланс аккаунта первого пользователя не изменился
         final double expectedUserBalanceRaw = randomMoneyDeposit - randomMoneyTransfer;
         final double expectedUserBalance = new BigDecimal(expectedUserBalanceRaw).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        final double actualUserBalance = UserSteps.getUserBalance(authUserToken, userAccount);
+        final double actualUserBalance = UserSteps.getUserBalance(firstUserToken, firstUserFirstAccount);
         assertThat(actualUserBalance).isEqualTo(expectedUserBalance);
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Негативный тест: проверка запрета выполнения транзакции повторно если не указано одно " +
             "из обязательных полей")
@@ -1308,13 +1476,18 @@ public class TransferTests extends BaseTestMiddle {
 
         //В шаге проверки недоступности кнопки Send Transfer при пустом Amount - баг. Кнопка доступна.
 
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем первый аккаунт первого пользователя
+        final int firstUserFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+
         int expectedTransactions = 1;
         int expectedListSize = 2;
         double randomMoneyDeposit = RandomData.getMoneyFromTo(4000, 5000);
-        UsersResponse userInfo = UserSteps.getUserInfo(authUserToken);
+        UsersResponse userInfo = UserSteps.getUserInfo(firstUserToken);
 
         //Пополняем аккаунт первого пользователя любой рандомной суммой
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoneyDeposit);
+        UserSteps.depositMoney(firstUserToken, firstUserFirstAccount, randomMoneyDeposit);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Переходим на вкладку Transfer Again и проверяем, что отображается строка поиска
@@ -1333,17 +1506,18 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransactionsListSize(expectedTransactions);
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
+
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyDeposit, Operations.DEPOSIT, userInfo.getUsername())).isTrue();
 
         //Нажимаем кнопку Repeat для транзакции Deposit и проверяем, что открылось модальное окно повтора транзакции
         transferPage
-                .clickRepeatTransaction(Operations.DEPOSIT, randomMoneyDeposit)
+                .clickRepeatButtonTransaction(Operations.DEPOSIT, randomMoneyDeposit)
                 .checkTransferModalTitleRepeatVisible();
 
         //Проверяем текст с подтверждением транзакции и номером аккаунтом на который ранее производилось пополнение
         final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
-        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + userAccount;
+        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + firstUserFirstAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
         //Проверяем значение по-умолчанию в выпадающем списке аккаунтов
@@ -1370,8 +1544,8 @@ public class TransferTests extends BaseTestMiddle {
         //Проверяем, что кнопка Send Transfer недоступна для нажатия
         transferPage
                 .checkTransferButtonNotClickable()
-                .selectAccountInRepeatModal(userAccount)
-                .checkSelectedAccountInListRepeatModal(authUserToken, userAccount)
+                .selectAccountInRepeatModal(firstUserFirstAccount)
+                .checkSelectedAccountInListRepeatModal(firstUserToken, firstUserFirstAccount)
                 .clearValueAmountRepeatModal()
                 .checkConfirmCheckboxChecked()
                 .checkTransferButtonNotClickable()
@@ -1380,6 +1554,8 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransferButtonNotClickable();
     }
 
+    @AdminSession
+    @UserSession
     @Test
     @DisplayName("Позитивный тест: проверка закрытия модального окна Repeat Transfer различными способами")
     public void userCanCloseModalPageRepeatTransferInDiffWays() {
@@ -1387,10 +1563,16 @@ public class TransferTests extends BaseTestMiddle {
         int expectedTransactions = 1;
         int expectedListSize = 2;
         double randomMoneyDeposit = RandomData.getMoneyFromTo(4000, 5000);
-        UsersResponse userInfo = UserSteps.getUserInfo(authUserToken);
+
+        //Получаем токен первого пользователя
+        final String firstUserToken = SessionStorage.getUserTokenFromStorage(1);
+        //Получаем первый аккаунт первого пользователя
+        final int firstUserFirstAccount = SessionStorage.getUserAccountByUserToken(firstUserToken, 1);
+
+        UsersResponse userInfo = UserSteps.getUserInfo(firstUserToken);
 
         //Пополняем аккаунт первого пользователя любой рандомной суммой
-        UserSteps.depositMoney(authUserToken, userAccount, randomMoneyDeposit);
+        UserSteps.depositMoney(firstUserToken, firstUserFirstAccount, randomMoneyDeposit);
 
         //Переходим на страницу трансфера и проверяем, что отображается название этой страницы
         //Переходим на вкладку Transfer Again и проверяем, что отображается строка поиска
@@ -1409,16 +1591,17 @@ public class TransferTests extends BaseTestMiddle {
                 .checkTransactionsListSize(expectedTransactions);
 
         //Проверяем, что одна транзакция содержит тип DEPOSIT, сумму и username пользователя
-        final List<String> transactionsTextTransfer = transferPage.getTransactionsText();
+        final List<UserTransactionHistory> transactionsTextTransfer = transferPage.getTransactionsHistoryList();
+
         assertThat(transferPage.checkTransaction(transactionsTextTransfer, randomMoneyDeposit, Operations.DEPOSIT, userInfo.getUsername())).isTrue();
 
         //Нажимаем кнопку Repeat для транзакции Deposit и проверяем, что открылось модальное окно повтора транзакции
-        transferPage.clickRepeatTransaction(Operations.DEPOSIT, randomMoneyDeposit);
+        transferPage.clickRepeatButtonTransaction(Operations.DEPOSIT, randomMoneyDeposit);
         transferPage.checkTransferModalTitleRepeatVisible();
 
         //Проверяем текст с подтверждением транзакции и номером аккаунтом на который ранее производилось пополнение
         final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
-        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + userAccount;
+        final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + firstUserFirstAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
         //Проверяем значение по-умолчанию в выпадающем списке аккаунтов
@@ -1434,13 +1617,13 @@ public class TransferTests extends BaseTestMiddle {
         transferPage
                 .checkDefaultValueInAccountListRepeatModal()
                 .checkAccountSizeInRepeatModal(expectedListSize)
-                .selectAccountInRepeatModal(userAccount)
-                .checkSelectedAccountInListRepeatModal(authUserToken, userAccount)
+                .selectAccountInRepeatModal(firstUserFirstAccount)
+                .checkSelectedAccountInListRepeatModal(firstUserToken, firstUserFirstAccount)
                 .clickCancelButton()
                 .checkTransferModalTitleRepeatNotVisible()
-                .clickRepeatTransaction(Operations.DEPOSIT, randomMoneyDeposit)
+                .clickRepeatButtonTransaction(Operations.DEPOSIT, randomMoneyDeposit)
                 .checkTransferModalTitleRepeatVisible()
-                .checkSelectedAccountInListRepeatModal(authUserToken, userAccount)
+                .checkSelectedAccountInListRepeatModal(firstUserToken, firstUserFirstAccount)
                 .clickCloseButton()
                 .checkTransferModalTitleRepeatNotVisible();
 

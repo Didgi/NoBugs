@@ -1,29 +1,29 @@
-package ui_tests.middle_ui_tests;
+package ui_tests.senior_ui_tests;
 
 import api.config.Config;
-import api_tests.iteraion2_senior.BaseTestSenior;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
+import common.extensions.AdminSessionExtension;
+import common.extensions.BrowserAnnotationExtension;
+import common.extensions.UserSessionExtension;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.openqa.selenium.Alert;
+import org.junit.jupiter.api.extension.ExtendWith;
 import ui.pages.DepositPage;
 import ui.pages.MainPage;
 import ui.pages.TransferPage;
 import ui.pages.UserProfilePage;
 
-import java.util.Locale;
 import java.util.Map;
 
-import static api.config.AccountData.ACCOUNT_NUMBER_PREFIX;
-import static api.requests.steps.user_steps.UserSteps.getUserBalance;
-import static com.codeborne.selenide.Selenide.executeJavaScript;
-import static com.codeborne.selenide.Selenide.switchTo;
-import static ui.pages.BasePage.putTokenIntoStorage;
+@ExtendWith(AdminSessionExtension.class)
+@ExtendWith(UserSessionExtension.class)
+@ExtendWith(BrowserAnnotationExtension.class)
 
-public class BaseTestMiddle extends BaseTestSenior {
+public class BaseTestSenior extends api_tests.iteraion2_senior.BaseTestSenior {
     @BeforeAll
-    public static void setupSelenoid(){
+    public static void setupSelenoid() {
         Configuration.remote = Config.getProperty("remote_host");
         Configuration.baseUrl = Config.getProperty("ui_baseurl");
         Configuration.browser = Config.getProperty("browser");
@@ -40,18 +40,14 @@ public class BaseTestMiddle extends BaseTestSenior {
 
     @BeforeEach
     public void setUpUiTests() {
-        // Сохраняем токен пользователя в localStorage
-        putTokenIntoStorage(authUserToken);
-
         mainPage = new MainPage();
         userProfilePage = new UserProfilePage();
         transferPage = new TransferPage();
         depositPage = new DepositPage();
     }
 
-//    public String getAccountInfoList(String userToken, int userAccount){
-//        final double userBalance = getUserBalance(userToken, userAccount);
-//        return ACCOUNT_NUMBER_PREFIX.getValue() + userAccount +
-//                " (Balance: $" + String.format(Locale.US,"%.2f", userBalance) + ")";
-//    }
+    @AfterEach
+    public void tearDownUiTests() {
+        Selenide.closeWebDriver();
+    }
 }
