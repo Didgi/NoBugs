@@ -1,25 +1,26 @@
 package api_tests.iteraion2_senior;
 
-import config.ResponseMessages;
-import models.ChangeUserRequest;
-import models.ChangeUserResponse;
-import models.UsersResponse;
+import api.config.ResponseMessages;
+import api.models.ChangeUserRequest;
+import api.models.ChangeUserResponse;
+import api.models.UsersResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import requests.skelethon.EndpointRequests;
-import requests.skelethon.requesters.CrudRequester;
-import requests.skelethon.requesters.ValidatableCrudRequester;
-import specs.RequestSpecs;
-import specs.ResponseSpecs;
-import utils.RandomModelGenerator;
+import api.requests.skelethon.EndpointRequests;
+import api.requests.skelethon.requesters.CrudRequester;
+import api.requests.skelethon.requesters.ValidatableCrudRequester;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
+import api.utils.RandomModelGenerator;
 
 import java.util.stream.Stream;
 
-import static requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
-import static requests.steps.user_steps.UserSteps.*;
+import static api.requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
+import static api.requests.steps.user_steps.UserSteps.getUserInfo;
+import static api.requests.steps.user_steps.UserSteps.successfulChangeUserName;
 
 public class ChangeUserNameTests extends BaseTestSenior {
     private static Stream<Arguments> diffPositiveData() {
