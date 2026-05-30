@@ -15,6 +15,7 @@ import api.utils.RandomModelGenerator;
 import com.codeborne.selenide.Selenide;
 import common.SessionStorage;
 import common.annotations.AdminSession;
+import common.annotations.Bug;
 import common.annotations.UserSession;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -735,9 +736,12 @@ public class TransferTests extends BaseTestSenior {
 
     @AdminSession(amountUsers = 2)
     @UserSession
+    @Bug(true)
     @Test
     @DisplayName("Негативный тест: проверка, что пользователь не может находить чужие транзакции по username/name")
     public void userCannotFindTransactionHistoryByOtherUsers() {
+
+        //На последнем шаге баг - пользователь может просмотреть чужие транзакции
 
         final double randomMoney = RandomData.getMoney();
 
@@ -795,6 +799,7 @@ public class TransferTests extends BaseTestSenior {
 
     @AdminSession(amountUsers = 2)
     @UserSession(amountAccounts = 2)
+    @Bug(true)
     @Test
     @DisplayName("Позитивный тест: проверка, что пользователь может выполнить повторно ранее выполненные " +
             "транзакции с типом DEPOSIT")
@@ -869,6 +874,7 @@ public class TransferTests extends BaseTestSenior {
 
     @AdminSession(amountUsers = 2)
     @UserSession
+    @Bug(true)
     @Test
     @DisplayName("Позитивный тест: проверка, что пользователь может выполнить повторно ранее выполненные " +
             "транзакции c типом TRANSFER_OUT")
@@ -1012,6 +1018,7 @@ public class TransferTests extends BaseTestSenior {
 
     @AdminSession
     @UserSession
+    @Bug(true)
     @Test
     @DisplayName("Негативный тест: проверка запрета выполнения транзакции повторно если не указано одно " +
             "из обязательных полей")

@@ -1,9 +1,11 @@
 package ui.pages;
 
+import api.config.Config;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
+import common.retry.RetryUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -20,13 +22,13 @@ public class UserProfilePage extends BasePage<UserProfilePage> {
 
     private final SelenideElement saveButton = $(Selectors.byText("\uD83D\uDCBE Save Changes"));
 
-    public UserProfilePage waitUntilInputStable() {
-        Selenide.Wait().until(driver -> {
-            String v1 = inputNameField.getValue();
-            Selenide.sleep(1000);
-            String v2 = inputNameField.getValue();
-            return v1 != null && v1.equals(v2);
-        });
+    public UserProfilePage waitUntilInputFieldStable() {
+        RetryUtils.retry(
+                inputNameField::getValue,
+                result -> result != null,
+                Integer.parseInt(Config.getProperty("max_retry_amounts")),
+                Integer.parseInt(Config.getProperty("timeout_mills"))
+        );
         return this;
     }
 

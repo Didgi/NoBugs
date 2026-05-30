@@ -5,6 +5,7 @@ import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import common.extensions.AdminSessionExtension;
 import common.extensions.BrowserAnnotationExtension;
+import common.extensions.BugExtension;
 import common.extensions.UserSessionExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,6 +21,7 @@ import java.util.Map;
 @ExtendWith(AdminSessionExtension.class)
 @ExtendWith(UserSessionExtension.class)
 @ExtendWith(BrowserAnnotationExtension.class)
+@ExtendWith(BugExtension.class)
 
 public class BaseTestSenior extends api_tests.iteraion2_senior.BaseTestSenior {
     @BeforeAll

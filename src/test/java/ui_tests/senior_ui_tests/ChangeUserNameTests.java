@@ -35,7 +35,7 @@ public class ChangeUserNameTests extends BaseTestSenior {
                 .getPage(UserProfilePage.class)
                 .open()
                 .checkEditPageOpened()
-                .waitUntilInputStable()
+                .waitUntilInputFieldStable()
                 .checkInputNameFieldDefaultValue()
                 .inputName(expectedUserName)
                 .clickSaveButton()
@@ -75,7 +75,7 @@ public class ChangeUserNameTests extends BaseTestSenior {
         userProfilePage
                 .open()
                 .checkEditPageOpened()
-                .waitUntilInputStable()
+                .waitUntilInputFieldStable()
                 .checkInputNameFieldDefaultValue()
                 .inputName(expectedUserName)
                 .clickSaveButton()
@@ -108,7 +108,7 @@ public class ChangeUserNameTests extends BaseTestSenior {
         userProfilePage
                 .open()
                 .checkEditPageOpened()
-                .waitUntilInputStable()
+                .waitUntilInputFieldStable()
                 .checkInputNameFieldDefaultValue()
                 .clickSaveButton()
                 .checkMessageFromModalPageAndAccept(UPDATE_ERROR_NAME_EMPTY.getValue());
