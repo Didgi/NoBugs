@@ -15,7 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static ui.pages.AlertMessages.*;
 
-public class DepositTests extends BaseTestSenior {
+public class DepositTests extends UIBaseTestSenior {
 
     private double expectedRandomMoney = RandomData.getMoney();
 

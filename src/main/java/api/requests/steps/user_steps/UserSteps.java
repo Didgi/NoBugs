@@ -3,6 +3,7 @@ package api.requests.steps.user_steps;
 import api.models.*;
 import api.config.Operations;
 import api.config.ResponseMessages;
+import common.SessionStorage;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.specification.ResponseSpecification;
 import lombok.Getter;
@@ -59,6 +60,20 @@ public class UserSteps {
                 .as(new TypeRef<List<UserAccountResponse>>() {
                 });
         return userAccountResponse.stream().map(UserAccountResponse::getId).toList();
+
+    }
+
+    public static List<Integer> getUserAccountIds() {
+
+        return SessionStorage.getAllUserTokensFromStorage().stream().flatMap(
+                userToken ->
+                    new CrudRequester(RequestSpecs.withToken(userToken),
+                            EndpointRequests.GET_USER_ACCOUNTS,
+                            ResponseSpecs.requestReturnsOk()).GET().assertThat().extract()
+                            .as(new TypeRef<List<UserAccountResponse>>() {
+                            })
+                            .stream()
+        ).map(UserAccountResponse::getId).toList();
 
     }
 

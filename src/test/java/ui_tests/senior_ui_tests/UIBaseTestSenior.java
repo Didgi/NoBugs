@@ -1,12 +1,10 @@
 package ui_tests.senior_ui_tests;
 
 import api.config.Config;
+import api_tests.iteraion2_senior.BaseTestSenior;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
-import common.extensions.AdminSessionExtension;
-import common.extensions.BrowserAnnotationExtension;
-import common.extensions.BugExtension;
-import common.extensions.UserSessionExtension;
+import common.extensions.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,8 +20,9 @@ import java.util.Map;
 @ExtendWith(UserSessionExtension.class)
 @ExtendWith(BrowserAnnotationExtension.class)
 @ExtendWith(BugExtension.class)
+@ExtendWith(TimingExtension.class)
 
-public class BaseTestSenior extends api_tests.iteraion2_senior.BaseTestSenior {
+public class UIBaseTestSenior extends BaseTestSenior {
     @BeforeAll
     public static void setupSelenoid() {
         Configuration.remote = Config.getProperty("remote_host");
@@ -31,8 +30,12 @@ public class BaseTestSenior extends api_tests.iteraion2_senior.BaseTestSenior {
         Configuration.browser = Config.getProperty("browser");
         Configuration.browserSize = Config.getProperty("resolution");
         Configuration.browserCapabilities.setCapability("selenoid:options",
-                Map.of("enableVNC", true, "enableLog", true)
+                Map.of("enableVNC", Boolean.parseBoolean(Config.getProperty("enable_vnc")),
+                        "enableLog", Boolean.parseBoolean(Config.getProperty("enable_log")),
+                        "enableVideo", Boolean.parseBoolean(Config.getProperty("enable_recording_video")))
         );
+
+        Configuration.headless = Boolean.parseBoolean(Config.getProperty("headless_mode"));
     }
 
     protected MainPage mainPage;

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static ui.pages.AlertMessages.*;
 import static ui.pages.MainPage.DEFAULT_USER_NAME;
 
-public class ChangeUserNameTests extends BaseTestSenior {
+public class ChangeUserNameTests extends UIBaseTestSenior {
 
     @AdminSession
     @BrowserAnnotation({"firefox", "chrome"})

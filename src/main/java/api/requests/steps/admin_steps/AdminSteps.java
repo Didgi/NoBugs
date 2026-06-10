@@ -1,6 +1,5 @@
 package api.requests.steps.admin_steps;
 
-import io.restassured.common.mapper.TypeRef;
 import api.models.CreateUserRequest;
 import api.models.LoginRequest;
 import api.models.UserAccountResponse;
@@ -12,6 +11,8 @@ import api.requests.skelethon.requesters.ValidatableCrudRequester;
 import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import api.utils.RandomModelGenerator;
+import common.SessionStorage;
+import io.restassured.common.mapper.TypeRef;
 
 import java.util.Comparator;
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AdminSteps {
+
     public static String createUserAndGetToken() {
 
         final CreateUserRequest userRequest = RandomModelGenerator.generate(CreateUserRequest.class);
@@ -34,8 +36,14 @@ public class AdminSteps {
                 .password(userRequest.getPassword())
                 .build();
 
-        return new CrudRequester(RequestSpecs.withAdminToken(), EndpointRequests.LOGIN, ResponseSpecs.requestReturnsOk())
+        String userToken = new CrudRequester(RequestSpecs.withAdminToken(), EndpointRequests.LOGIN, ResponseSpecs.requestReturnsOk())
                 .POST(loginRequest).extract().header("Authorization");
+
+        SessionStorage.addUserInfoToStorage(userToken, userResponse);
+
+        SessionStorage.addCreatedUser(userResponse.getId());
+
+        return userToken;
     }
 
     private static List<Integer> getUsersId() {
@@ -47,13 +55,38 @@ public class AdminSteps {
         return users.stream().map(UsersResponse::getId).toList();
     }
 
-    public static void deleteUsersById() {
+    private static List<UsersResponse> getUsersInfo() {
+        return new CrudRequester(RequestSpecs.withAdminToken(),
+                EndpointRequests.GET_USERS_BY_ADMIN, ResponseSpecs.requestReturnsOk())
+                .GET().assertThat().extract().as(new TypeRef<List<UsersResponse>>() {
+                });
+    }
+
+    public static void deleteAllUsers() {
         final List<Integer> usersId = getUsersId();
         usersId.forEach(id -> {
             new CrudRequester(RequestSpecs.withAdminToken(), EndpointRequests.DELETE_USER, ResponseSpecs.requestReturnsOk())
                     .DELETE(id);
         });
 
+    }
+
+    public static void deleteUsersById() {
+        final List<Integer> usersId = SessionStorage.getCreatedUsers();
+        System.out.println("Id удаляемых пользователей: " + usersId);
+        if (usersId.isEmpty()) {
+            System.out.println("Нет пользователей для удаления");
+            return;
+        }
+        try {
+            usersId.forEach(id -> {
+                new CrudRequester(RequestSpecs.withAdminToken(), EndpointRequests.DELETE_USER, ResponseSpecs.requestReturnsOk())
+                        .DELETE(id);
+            });
+        } catch (RuntimeException e) {
+            System.out.println("При попытке удаления пользователя произошла ошибка: " + e);
+        }
+        SessionStorage.clearCreatedUsersList();
     }
 
     public static int getMaxExistedAccountId() {

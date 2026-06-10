@@ -1,36 +1,35 @@
 package api_tests.iteraion2_senior;
 
+import api.requests.steps.user_steps.UserSteps;
+import common.extensions.BugExtension;
+import common.extensions.TimingExtension;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import api.requests.steps.user_steps.UserSteps;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import static api.requests.steps.admin_steps.AdminSteps.createUserAndGetToken;
-import static api.requests.steps.admin_steps.AdminSteps.deleteUsersById;
+import static api.requests.steps.admin_steps.AdminSteps.*;
 import static api.requests.steps.user_steps.UserSteps.createUserAccount;
-import static api.requests.steps.user_steps.UserSteps.deleteUserAccounts;
 
+@ExtendWith(BugExtension.class)
+@ExtendWith(TimingExtension.class)
 public class BaseTestSenior {
-    protected static String authUserToken;
-    protected static int userAccount;
-    public static SoftAssertions softly;
+    protected String authUserToken;
+    protected int userAccount;
+    public SoftAssertions softly;
 
     @BeforeEach
     public void setUp() {
         softly = new SoftAssertions();
         UserSteps.SoftAssertions(softly);
-        // 1. Создаём нового пользователя и получаем его токен
         authUserToken = createUserAndGetToken();
-        // 2. Создаём аккаунт для пользователя
         userAccount = createUserAccount(authUserToken);
     }
 
     @AfterEach
     public void cleanUp() {
-        // 3. Удаляем все аккаунты пользователя
-        deleteUserAccounts(authUserToken);
-        // 4. Удаляем всех пользователей
         deleteUsersById();
         softly.assertAll();
     }
+
 }

@@ -1,12 +1,12 @@
 package ui.pages;
 
-import api.config.Config;
 import com.codeborne.selenide.*;
 import common.retry.RetryUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Alert;
+import org.openqa.selenium.NoAlertPresentException;
 import ui.elements.BaseElement;
 
 import java.util.List;
@@ -74,11 +74,14 @@ public abstract class BasePage<T extends BasePage> {
 
     public T checkMessageFromModalPageAndAccept(String messageText) {
         Alert alert = RetryUtils.retry(
-                () -> switchTo().alert(),
-                result -> result != null,
-                Integer.parseInt(Config.getProperty("max_retry_amounts")),
-                Long.parseLong(Config.getProperty("timeout_mills"))
-        );
+                () -> {
+                    try {
+                        return switchTo().alert();
+                    } catch (NoAlertPresentException e) {
+                        return null;
+                    }
+                },
+                result -> result != null);
         final String actualAlertText = alert.getText();
         assertThat(actualAlertText).isEqualTo(messageText);
         alert.accept();
