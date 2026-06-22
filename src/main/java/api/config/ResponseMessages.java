@@ -7,8 +7,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ResponseMessages {
 
-    DEPOSIT_AMOUNT_MUST_BE_AT_LEAST_01("Deposit amount must be at least 0.01"),
-    DEPOSIT_AMOUNT_CANNOT_EXCEED_5000("Deposit amount cannot exceed 5000"),
+    DEPOSIT_AMOUNT_MUST_BE_AT_LEAST_01_OLD("Deposit amount must be at least 0.01"),
+    INVALID_ACCOUNT_OR_AMOUNT("Invalid account or amount"), //new message
+    DEPOSIT_AMOUNT_CANNOT_EXCEED_5000_OLD("Deposit amount cannot exceed 5000"),
+    DEPOSIT_AMOUNT_CANNOT_EXCEED_5000("Deposit amount exceeds the 5000 limit"),
     UNAUTHORIZED_ACCESS_TO_ACCOUNT("Unauthorized access to account"),
     TRANSFER_SUCCESSFUL("Transfer successful"),
     TRANSFER_AMOUNT_MUST_BE_AT_LEAST_01("Transfer amount must be at least 0.01"),

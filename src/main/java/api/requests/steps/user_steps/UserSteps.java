@@ -1,23 +1,26 @@
 package api.requests.steps.user_steps;
 
-import api.models.*;
 import api.config.Operations;
 import api.config.ResponseMessages;
+import api.dao.jdbc.TransactionsDao;
+import api.models.*;
+import api.models.comparison.ModelAssertions;
+import api.requests.skelethon.EndpointRequests;
+import api.requests.skelethon.requesters.CrudRequester;
+import api.requests.skelethon.requesters.ValidatableCrudRequester;
+import api.requests.steps.db_steps.DBSteps;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 import common.SessionStorage;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.specification.ResponseSpecification;
 import lombok.Getter;
 import lombok.Setter;
-import api.models.comparison.ModelAssertions;
 import org.assertj.core.api.SoftAssertions;
-import api.requests.skelethon.EndpointRequests;
-import api.requests.skelethon.requesters.CrudRequester;
-import api.requests.skelethon.requesters.ValidatableCrudRequester;
-import api.specs.RequestSpecs;
-import api.specs.ResponseSpecs;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -112,9 +115,26 @@ public class UserSteps {
         softly.assertThat(userFirstTransactionsResponse.getId()).isGreaterThan(DEFAULT_ZERO_ACCOUNT_ID);
         softly.assertThat(userFirstTransactionsResponse.getAmount()).isEqualTo(moneyToTransfer);
         softly.assertThat(userFirstTransactionsResponse.getType()).isEqualTo(operation);
-        softly.assertThat(userFirstTransactionsResponse.getTimestamp()).isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS),
-                nowTime.plusSeconds(PLUS_MINUS_SECONDS));
+        softly.assertThat(userFirstTransactionsResponse.getTimestamp())
+                .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
+                nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
         softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(toAccountId);
+
+    }
+
+    public static void checkPositiveUserTransactionsDb(int fromAccountId, int toAccountId,
+                                                       ZonedDateTime nowTime, String operation, double moneyToTransfer) throws SQLException {
+
+        final TransactionsDao transactionsDao = DBSteps.getTransactionInfoListByAccountIdJDBC(fromAccountId)
+                .stream().max(Comparator.comparing(TransactionsDao::getId)).orElseThrow();
+
+        softly.assertThat(transactionsDao.getId()).isGreaterThan(DEFAULT_ZERO_ACCOUNT_ID);
+        softly.assertThat(transactionsDao.getAmount()).isEqualTo(moneyToTransfer);
+        softly.assertThat(transactionsDao.getType()).isEqualTo(operation);
+        softly.assertThat(transactionsDao.getTimestamp().toLocalDateTime())
+                .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
+                        nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
+        softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(toAccountId);
 
     }
 
@@ -124,6 +144,16 @@ public class UserSteps {
         userTransactions.stream().max(Comparator.comparingInt(UserTransactionsResponse::getId))
                 .ifPresent(userTransactionsResponse -> {
                     softly.assertThat(userTransactionsResponse.getType()).isNotEqualTo(operation);
+                });
+    }
+
+    public static void checkNegativeUserTransactionsDb(int accountId, Operations operation) throws SQLException {
+
+        DBSteps.getTransactionInfoListByAccountIdJDBC(accountId)
+                .stream()
+                .max(Comparator.comparing(TransactionsDao::getId))
+                .ifPresent(transactionsDao -> {
+                    softly.assertThat(transactionsDao.getType()).isNotEqualTo(operation);
                 });
     }
 
@@ -137,7 +167,7 @@ public class UserSteps {
 
         softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getId());
         softly.assertThat(userAccountResponse.getAccountNumber())
-                .isEqualTo(ACCOUNT_NUMBER_PREFIX.getValue() + depositRequest.getId());
+                .startsWith(ACCOUNT_NUMBER_PREFIX.getValue());
         softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getBalance());
         softly.assertThat(userAccountResponse.getTransactions()).isNotEmpty();
     }

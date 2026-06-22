@@ -16,4 +16,5 @@ public class UsersResponse extends BaseModel {
     private String name;
     private String role;
     private List<UserAccountResponse> accounts;
+
 }

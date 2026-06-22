@@ -2,6 +2,7 @@ package ui.pages;
 
 import api.config.AccountData;
 import api.config.Operations;
+import api.requests.steps.db_steps.DBSteps;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selectors;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 import ui.elements.UserTransactionHistory;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.util.List;
 
@@ -172,14 +174,6 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
-    public TransferPage checkTransactionsListSize2(int expectedSize) {
-        RetryUtils.retry(
-                () -> transactionsList.size() == expectedSize,
-                result -> result
-        );
-        return this;
-    }
-
     public TransferPage inputValueInSearchField(String value) {
         searchField.click();
         searchField.setValue(value);
@@ -291,8 +285,22 @@ public class TransferPage extends BasePage<TransferPage> {
                         && element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
     }
 
-    public String expectedSuccessfulTransferModalMessage(double money, int userAccount) {
+    @Deprecated
+    public String expectedSuccessfulTransferModalMessageOld(double money, int userAccount) {
         return "✅ Successfully transferred $" + money + " to account " + ACCOUNT_NUMBER_PREFIX.getValue() + userAccount + "!";
+    }
+
+    public String expectedSuccessfulTransferModalMessage(double money, int userAccount) throws SQLException {
+        final String accountNumber = DBSteps.getAccountByAccountIdJDBC(userAccount).getAccountNumber();
+        return "✅ Successfully transferred $" + money + " to account " + accountNumber + "!";
+    }
+
+    @Deprecated
+    public TransferPage checkSelectedAccountInListRepeatModalOld(String userToken, int userAccount) {
+        final String actualAccountInfoInListRepeatModal = accountSelectorInRepeatModal.getSelectedOptionText();
+        final String expectedAccountInfoInListRepeatModal = getAccountInfoListOld(userToken, userAccount);
+        assertThat(actualAccountInfoInListRepeatModal).isEqualTo(expectedAccountInfoInListRepeatModal);
+        return this;
     }
 
     public TransferPage checkSelectedAccountInListRepeatModal(String userToken, int userAccount) {
