@@ -1,10 +1,17 @@
 package ui.pages;
 
+import api.dao.jpa.entities.AccountsEntity;
+import api.models.UserAccountResponse;
+import api.models.UsersResponse;
+import api.requests.steps.db_steps.DBSteps;
+import api.requests.steps.user_steps.UserSteps;
 import com.codeborne.selenide.*;
+import common.retry.RetryUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Alert;
+import org.openqa.selenium.NoAlertPresentException;
 import ui.elements.BaseElement;
 
 import java.util.List;
@@ -71,21 +78,54 @@ public abstract class BasePage<T extends BasePage> {
     }
 
     public T checkMessageFromModalPageAndAccept(String messageText) {
-        Alert alert = switchTo().alert();
+        Alert alert = RetryUtils.retry(
+                () -> {
+                    try {
+                        return switchTo().alert();
+                    } catch (NoAlertPresentException e) {
+                        return null;
+                    }
+                },
+                result -> result != null);
         final String actualAlertText = alert.getText();
         assertThat(actualAlertText).isEqualTo(messageText);
         alert.accept();
         return (T) this;
     }
 
-    public String expectedSuccessfullyDepositModalMessage(double money, int userAccount) {
+    @Deprecated
+    public String expectedSuccessfullyDepositModalMessageOld(double money, int userAccount) {
         return "✅ Successfully deposited $" + money + " to account " + ACCOUNT_NUMBER_PREFIX.getValue() + userAccount + "!";
     }
 
-    public static String getAccountInfoList(String userToken, int userAccount) {
+    public String expectedSuccessfullyDepositModalMessage(double money, int userAccount) {
+        final AccountsEntity accountByAccountIdJPA = DBSteps.getAccountByAccountIdJPA(userAccount);
+        return "✅ Successfully deposited $" + money + " to account " + accountByAccountIdJPA.getAccountNumber() + "!";
+    }
+
+    @Deprecated
+    public static String getAccountInfoListOld(String userToken, int userAccount) {
         final double userBalance = getUserBalance(userToken, userAccount);
         return ACCOUNT_NUMBER_PREFIX.getValue() + userAccount +
                 " (Balance: $" + String.format(Locale.US, "%.2f", userBalance) + ")";
+    }
+
+    public static String getAccountInfoList(String userToken, int userAccount) {
+        final UsersResponse userInfo = UserSteps.getUserInfo(userToken);
+        final UserAccountResponse userAccountResponse = userInfo.getAccounts()
+                .stream()
+                .filter(u -> u.getId() == userAccount)
+                .findFirst().orElseThrow();
+        return userAccountResponse.getAccountNumber() +
+                " (Balance: $" + String.format(Locale.US, "%.2f", userAccountResponse.getBalance()) + ")";
+    }
+
+    @Deprecated
+    public T checkSelectedAccountInListOld(String userToken, int userAccount) {
+        final String actualAccountInfoInList = getAccountSelector().getSelectedOptionText();
+        final String expectedAccountInfoInList = getAccountInfoListOld(userToken, userAccount);
+        assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
+        return (T) this;
     }
 
     public T checkSelectedAccountInList(String userToken, int userAccount) {
@@ -109,6 +149,12 @@ public abstract class BasePage<T extends BasePage> {
     public T selectAccount(int account) {
         getAccountSelector().click();
         getAccountSelector().selectOptionByValue(String.valueOf(account));
+        return (T) this;
+    }
+
+    public T selectAccount(String account) {
+        getAccountSelector().click();
+        getAccountSelector().selectOptionContainingText(account);
         return (T) this;
     }
 

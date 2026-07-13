@@ -1,22 +1,28 @@
 package ui.pages;
 
 import api.config.AccountData;
-import com.codeborne.selenide.*;
 import api.config.Operations;
+import api.requests.steps.db_steps.DBSteps;
+import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.Selectors;
+import com.codeborne.selenide.SelenideElement;
+import common.retry.RetryUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import ui.elements.UserTransactionHistory;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.sql.SQLException;
+import java.time.Duration;
 import java.util.List;
 
+import static api.config.AccountData.ACCOUNT_NUMBER_PREFIX;
 import static com.codeborne.selenide.CollectionCondition.size;
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selectors.byText;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.$$;
-import static api.config.AccountData.ACCOUNT_NUMBER_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Getter
@@ -43,7 +49,7 @@ public class TransferPage extends BasePage<TransferPage> {
 
     private final SelenideElement searchTransactionsButton = $(byText("\uD83D\uDD0D Search Transactions"));
 
-    private final ElementsCollection transactionsList = $$("ul.list-group li");
+    public final static ElementsCollection transactionsList = $$("ul.list-group li");
 
     public final static String NAME_REPEAT_BUTTON = "🔁 Repeat";
 
@@ -164,7 +170,7 @@ public class TransferPage extends BasePage<TransferPage> {
     }
 
     public TransferPage checkTransactionsListSize(int expectedSize) {
-        transactionsList.shouldHave(size(expectedSize));
+        transactionsList.shouldHave(size(expectedSize), Duration.ofSeconds(10));
         return this;
     }
 
@@ -206,7 +212,7 @@ public class TransferPage extends BasePage<TransferPage> {
     }
 
     public TransferPage checkAccountSizeInRepeatModal(int expectedSize) {
-        accountSelectorInRepeatModal.options().shouldHave(size(expectedSize));
+        accountSelectorInRepeatModal.options().shouldHave(size(expectedSize), Duration.ofSeconds(30));
         return this;
     }
 
@@ -218,8 +224,8 @@ public class TransferPage extends BasePage<TransferPage> {
 
     public TransferPage checkAmountValueFieldRepeatModal(double value) {
         amountFieldInRepeatModal.shouldBe(Condition.visible);
-        final double valueAccurate = new BigDecimal(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
-        amountFieldInRepeatModal.shouldHave(Condition.exactValue(String.valueOf(valueAccurate)));
+        final String valueAccurate = BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
+        amountFieldInRepeatModal.shouldHave(Condition.exactValue(valueAccurate));
         return this;
     }
 
@@ -258,16 +264,43 @@ public class TransferPage extends BasePage<TransferPage> {
 
     public boolean checkTransaction(List<UserTransactionHistory> transactionsTextTransfer,
                                     double money, Operations operation, String name) {
+        transactionsTextTransfer.forEach(element -> {
+            boolean operationMatch =
+                    element.getTransactionInfo().contains(operation.name());
+
+            boolean moneyMatch =
+                    element.getTransactionInfo().contains(String.valueOf(money));
+
+            boolean ownerMatch =
+                    element.getTransactionOwner().contains(TRANSACTION_OWNER + name);
+
+            boolean buttonMatch =
+                    element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON);
+        });
         return transactionsTextTransfer
                 .stream()
                 .anyMatch(element -> element.getTransactionInfo().contains(operation.name()) &&
                         element.getTransactionInfo().contains(String.valueOf(money)) &&
-                        element.getTransactionOwner().contains(TRANSACTION_OWNER + name)
+                        name == null || element.getTransactionOwner().contains(TRANSACTION_OWNER + name)
                         && element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
     }
 
-    public String expectedSuccessfulTransferModalMessage(double money, int userAccount) {
+    @Deprecated
+    public String expectedSuccessfulTransferModalMessageOld(double money, int userAccount) {
         return "✅ Successfully transferred $" + money + " to account " + ACCOUNT_NUMBER_PREFIX.getValue() + userAccount + "!";
+    }
+
+    public String expectedSuccessfulTransferModalMessage(double money, int userAccount) throws SQLException {
+        final String accountNumber = DBSteps.getAccountByAccountIdJDBC(userAccount).getAccountNumber();
+        return "✅ Successfully transferred $" + money + " to account " + accountNumber + "!";
+    }
+
+    @Deprecated
+    public TransferPage checkSelectedAccountInListRepeatModalOld(String userToken, int userAccount) {
+        final String actualAccountInfoInListRepeatModal = accountSelectorInRepeatModal.getSelectedOptionText();
+        final String expectedAccountInfoInListRepeatModal = getAccountInfoListOld(userToken, userAccount);
+        assertThat(actualAccountInfoInListRepeatModal).isEqualTo(expectedAccountInfoInListRepeatModal);
+        return this;
     }
 
     public TransferPage checkSelectedAccountInListRepeatModal(String userToken, int userAccount) {

@@ -1,13 +1,12 @@
 package api.models;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import api.config.Operations;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -17,8 +16,9 @@ public class UserTransactionsResponse {
     private int id;
     private double amount;
     private Operations type;
-    @JsonFormat(pattern = "EEE MMM dd HH:mm:ss zzz yyyy", locale = "en")
-    private ZonedDateTime timestamp;
+    private LocalDateTime timestamp;
+    private String timestampAsString;
     private int relatedAccountId;
+    private double amountAsDouble;
 
 }

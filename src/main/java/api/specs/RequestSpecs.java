@@ -20,7 +20,7 @@ public class RequestSpecs {
 
     private static Map<String, String> tokenStorage = new HashMap<>();
     private static final String ADMIN_USERNAME = Config.getProperty("admin_username");
-    private static final String ADMIN_PASSWORD = Config.getProperty("admin_username");
+    private static final String ADMIN_PASSWORD = Config.getProperty("admin_password");
 
     private RequestSpecs() {
     }
