@@ -1,14 +1,15 @@
 package api.specs;
 
 import api.config.Config;
+import api.models.LoginRequest;
+import api.requests.skelethon.EndpointRequests;
+import api.requests.skelethon.requesters.CrudRequester;
+import com.google.common.net.HttpHeaders;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import api.models.LoginRequest;
-import api.requests.skelethon.EndpointRequests;
-import api.requests.skelethon.requesters.CrudRequester;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +38,7 @@ public class RequestSpecs {
     }
 
     public static RequestSpecification withToken(String token) {
-        return basicRequestSpec().build().headers("Authorization", token);
+        return basicRequestSpec().build().headers(HttpHeaders.AUTHORIZATION, token);
     }
 
     public static RequestSpecification withAdminToken() {
@@ -48,10 +49,10 @@ public class RequestSpecs {
                     .POST(loginRequestAdmin)
                     .assertThat()
                     .extract()
-                    .header("Authorization");
+                    .header(HttpHeaders.AUTHORIZATION);
             tokenStorage.put(ADMIN_USERNAME, adminToken);
         }
-        return basicRequestSpec().build().headers("Authorization", tokenStorage.get(ADMIN_USERNAME));
+        return basicRequestSpec().build().headers(HttpHeaders.AUTHORIZATION, tokenStorage.get(ADMIN_USERNAME));
     }
 
 }

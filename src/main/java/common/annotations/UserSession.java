@@ -8,7 +8,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface UserSession {
-
-    // количество создаваемых аккаунтов для каждого пользователя
     int amountAccounts() default 1;
 }

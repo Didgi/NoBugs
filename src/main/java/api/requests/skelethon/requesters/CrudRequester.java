@@ -1,12 +1,12 @@
 package api.requests.skelethon.requesters;
 
-import io.restassured.response.ValidatableResponse;
-import io.restassured.specification.RequestSpecification;
-import io.restassured.specification.ResponseSpecification;
 import api.models.BaseModel;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.HttpBaseRequest;
 import api.requests.skelethon.interfaces.CrudRequestsInterface;
+import io.restassured.response.ValidatableResponse;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 
 import static io.restassured.RestAssured.given;
 
@@ -31,9 +31,26 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
                 .spec(responseSpecification);
     }
 
+    public ValidatableResponse POST(int transactionId) {
+        return given()
+                .spec(requestSpecification)
+                .pathParam("transactionId", transactionId)
+                .post(endpointRequests.getPath())
+                .then()
+                .spec(responseSpecification);
+    }
+
     @Override
     public ValidatableResponse GET() {
         return given().spec(requestSpecification)
+                .get(endpointRequests.getPath())
+                .then()
+                .spec(responseSpecification);
+    }
+
+    public ValidatableResponse GET(int accountId) {
+        return given().spec(requestSpecification)
+                .pathParam("accountId", accountId)
                 .get(endpointRequests.getPath())
                 .then()
                 .spec(responseSpecification);

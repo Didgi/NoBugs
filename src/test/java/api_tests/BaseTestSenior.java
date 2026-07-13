@@ -1,8 +1,9 @@
-package api_tests.iteraion2_senior;
+package api_tests;
 
 import api.requests.steps.user_steps.UserSteps;
 import common.extensions.ApiVersionExtension;
 import common.extensions.BugExtension;
+import common.extensions.FraudCheckExtension;
 import common.extensions.TimingExtension;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +17,7 @@ import static api.requests.steps.user_steps.UserSteps.createUserAccount;
 @ExtendWith(BugExtension.class)
 @ExtendWith(TimingExtension.class)
 @ExtendWith(ApiVersionExtension.class)
+@ExtendWith(FraudCheckExtension.class)
 public class BaseTestSenior {
     protected String authUserToken;
     protected int userAccount;

@@ -7,7 +7,6 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class DepositRequest extends BaseModel {
-    private int accountId;
-    private double amount;
+public class TransferErrorResponse extends BaseModel {
+    private String message;
 }

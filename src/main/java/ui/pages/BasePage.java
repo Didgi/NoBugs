@@ -2,7 +2,6 @@ package ui.pages;
 
 import api.dao.jpa.entities.AccountsEntity;
 import api.models.UserAccountResponse;
-import api.models.UsersResponse;
 import api.requests.steps.db_steps.DBSteps;
 import api.requests.steps.user_steps.UserSteps;
 import com.codeborne.selenide.*;
@@ -110,12 +109,14 @@ public abstract class BasePage<T extends BasePage> {
                 " (Balance: $" + String.format(Locale.US, "%.2f", userBalance) + ")";
     }
 
-    public static String getAccountInfoList(String userToken, int userAccount) {
-        final UsersResponse userInfo = UserSteps.getUserInfo(userToken);
-        final UserAccountResponse userAccountResponse = userInfo.getAccounts()
+    public static String getAccountInfoList(String userToken, String userAccountNumber) {
+        final List<UserAccountResponse> userAccounts = UserSteps.getUserAccounts(userToken);
+        final UserAccountResponse userAccountResponse = userAccounts
                 .stream()
-                .filter(u -> u.getId() == userAccount)
-                .findFirst().orElseThrow();
+                .filter(accInfo -> accInfo.getAccountNumber()
+                        .equals(userAccountNumber))
+                .findFirst()
+                .orElseThrow();
         return userAccountResponse.getAccountNumber() +
                 " (Balance: $" + String.format(Locale.US, "%.2f", userAccountResponse.getBalance()) + ")";
     }
@@ -128,9 +129,9 @@ public abstract class BasePage<T extends BasePage> {
         return (T) this;
     }
 
-    public T checkSelectedAccountInList(String userToken, int userAccount) {
+    public T checkSelectedAccountInList(String userToken, String userAccountNumber) {
         final String actualAccountInfoInList = getAccountSelector().getSelectedOptionText();
-        final String expectedAccountInfoInList = getAccountInfoList(userToken, userAccount);
+        final String expectedAccountInfoInList = getAccountInfoList(userToken, userAccountNumber);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
         return (T) this;
     }

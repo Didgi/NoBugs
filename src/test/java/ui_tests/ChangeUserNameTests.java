@@ -1,4 +1,4 @@
-package ui_tests.senior_ui_tests;
+package ui_tests;
 
 import api.dao.jdbc.CustomersDao;
 import api.requests.steps.db_steps.DBSteps;

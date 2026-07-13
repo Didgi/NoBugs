@@ -1,14 +1,13 @@
-package api_tests.iteraion2_senior;
+package api_tests;
 
 import api.config.AccountData;
 import api.config.Operations;
 import api.config.ResponseMessages;
+import api.config.TransactionStatus;
 import api.dao.comparison_db.ModelAssertionsDb;
 import api.dao.jdbc.AccountsDao;
 import api.dao.jdbc.TransactionsDao;
-import api.models.DepositRequest;
-import api.models.UserAccountResponse;
-import api.models.UserTransactionsResponse;
+import api.models.*;
 import api.models.comparison.ModelAssertions;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.requesters.CrudRequester;
@@ -66,23 +65,18 @@ public class DepositMoneyTests extends BaseTestSenior {
 
         ModelAssertions.assertThatModels(depositRequest, userAccountResponse).match();
 
-        softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getId());
-        softly.assertThat(userAccountResponse.getAccountNumber())
-                .isEqualTo(AccountData.ACCOUNT_NUMBER_PREFIX.getValue() + depositRequest.getId());
-        softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getBalance());
-        softly.assertThat(userAccountResponse.getTransactions()).isNotEmpty();
+        softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getAccountId());
+        softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getAmount());
 
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
-        final List<UserTransactionsResponse> userTransactions = getUserTransactions(authUserToken, userAccount);
+        final List<UserTransactionsResponse> userTransactions = getUserTransactionsOld(authUserToken, userAccount);
 
         userTransactions.forEach(transactions -> {
             softly.assertThat(transactions.getId()).isGreaterThan(minimumDefaultTransactionId);
-            softly.assertThat(transactions.getAmount()).isEqualTo(depositRequest.getBalance());
             softly.assertThat(transactions.getType()).isEqualTo(Operations.DEPOSIT);
             softly.assertThat(transactions.getTimestamp()).isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                     nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
-            softly.assertThat(transactions.getRelatedAccountId()).isEqualTo(depositRequest.getId());
         });
 
     }
@@ -97,21 +91,19 @@ public class DepositMoneyTests extends BaseTestSenior {
 
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        UserAccountResponse userAccountResponse =
-                new ValidatableCrudRequester<UserAccountResponse>(RequestSpecs.withToken(authUserToken),
+        DepositResponse userAccountResponse =
+                new ValidatableCrudRequester<DepositResponse>(RequestSpecs.withToken(authUserToken),
                         EndpointRequests.DEPOSIT_MONEY, ResponseSpecs.requestReturnsOk())
                         .POST(depositRequest);
-
-        ModelAssertions.assertThatModels(depositRequest, userAccountResponse).match();
 
         final AccountsDao accountsDao = DBSteps.getAccountByAccountNumberJDBC(userAccountResponse.getAccountNumber());
         ModelAssertionsDb.assertThatModels(userAccountResponse, accountsDao).match();
 
-        softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getId());
+        softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getAccountId());
         softly.assertThat(userAccountResponse.getAccountNumber())
                 .startsWith(AccountData.ACCOUNT_NUMBER_PREFIX.getValue());
-        softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getBalance());
-        softly.assertThat(userAccountResponse.getTransactions()).isNotEmpty();
+        softly.assertThat(userAccountResponse.getDepositAmount()).isEqualTo(depositRequest.getAmount());
+        softly.assertThat(userAccountResponse.getTransactionId()).isGreaterThan(minimumDefaultTransactionId);
 
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(expectedBalance);
 
@@ -119,24 +111,26 @@ public class DepositMoneyTests extends BaseTestSenior {
 
         userTransactions.forEach(transactions -> {
             softly.assertThat(transactions.getId()).isGreaterThan(minimumDefaultTransactionId);
-            softly.assertThat(transactions.getAmount()).isEqualTo(depositRequest.getBalance());
+            softly.assertThat(transactions.getAmount()).isEqualTo(depositRequest.getAmount());
             softly.assertThat(transactions.getType()).isEqualTo(Operations.DEPOSIT);
             softly.assertThat(transactions.getTimestamp())
                     .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                             nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
-            softly.assertThat(transactions.getRelatedAccountId()).isEqualTo(depositRequest.getId());
+            softly.assertThat(transactions.getRelatedAccountId()).isEqualTo(depositRequest.getAccountId());
+            softly.assertThat(transactions.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
         });
 
         final TransactionsDao transactionDao = DBSteps.getTransactionInfoByAccountIdJDBC(userAccountResponse.getId());
 
         softly.assertThat(transactionDao.getId()).isGreaterThan(minimumDefaultTransactionId);
-        softly.assertThat(transactionDao.getAmount()).isEqualTo(depositRequest.getBalance());
+        softly.assertThat(transactionDao.getAmount()).isEqualTo(depositRequest.getAmount());
         softly.assertThat(transactionDao.getType()).isEqualTo(Operations.DEPOSIT.name());
         softly.assertThat(transactionDao.getTimestamp().toLocalDateTime()).isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                 nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
-        softly.assertThat(transactionDao.getRelatedAccountId()).isEqualTo(depositRequest.getId());
+        softly.assertThat(transactionDao.getRelatedAccountId()).isEqualTo(depositRequest.getAccountId());
 
     }
+
 
     @Test
     @DisplayName("Позитивный тест: пользователь может положить деньги на свой аккаунт несколько раз с общей суммой больше 5000")
@@ -153,11 +147,9 @@ public class DepositMoneyTests extends BaseTestSenior {
 
         nowTime = ZonedDateTime.now(ZoneOffset.UTC);
 
-        final UserAccountResponse userAccountResponse = new ValidatableCrudRequester<UserAccountResponse>
+        final DepositResponse userAccountResponse = new ValidatableCrudRequester<DepositResponse>
                 (RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY,
                         ResponseSpecs.requestReturnsOk()).POST(depositRequestSecond);
-
-        ModelAssertions.assertThatModels(depositRequestSecond, userAccountResponse).match();
 
         final AccountsDao accountsDao = DBSteps.getAccountByAccountNumberJDBC(userAccountResponse.getAccountNumber());
         ModelAssertionsDb.assertThatModels(userAccountResponse, accountsDao).match();
@@ -172,7 +164,8 @@ public class DepositMoneyTests extends BaseTestSenior {
             softly.assertThat(transactions.getTimestamp())
                     .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                             nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
-            softly.assertThat(transactions.getRelatedAccountId()).isEqualTo(depositRequestSecond.getId());
+            softly.assertThat(transactions.getRelatedAccountId()).isEqualTo(depositRequestSecond.getAccountId());
+            softly.assertThat(transactions.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
         });
 
         final List<TransactionsDao> transactionDao = DBSteps.getTransactionInfoListByAccountIdJDBC(userAccountResponse.getId());
@@ -183,7 +176,7 @@ public class DepositMoneyTests extends BaseTestSenior {
             softly.assertThat(transactionsDao.getTimestamp().toLocalDateTime())
                     .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                             nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
-            softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(depositRequestSecond.getId());
+            softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(depositRequestSecond.getAccountId());
         });
 
         final UserTransactionsResponse userTransactionsResponseFirst = userTransactions
@@ -234,6 +227,7 @@ public class DepositMoneyTests extends BaseTestSenior {
 
     }
 
+
     private static Stream<Arguments> diffNegativeValueOld() {
         return Stream.of(
                 Arguments.of(-0.01, 0.0, ResponseMessages.DEPOSIT_AMOUNT_MUST_BE_AT_LEAST_01_OLD.getValue()),
@@ -247,7 +241,7 @@ public class DepositMoneyTests extends BaseTestSenior {
     public void userCannotDepositHisAccountMoneyLessThanMiniumLimitOld(Number incomingMoney, Number expectedBalance, String errorMessage) {
 
         final DepositRequest depositRequest = DepositRequest
-                .builder().id(userAccount).balance(incomingMoney.doubleValue()).build();
+                .builder().accountId(userAccount).amount(incomingMoney.doubleValue()).build();
 
         final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
                 , ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).extract().response().asString();
@@ -267,6 +261,7 @@ public class DepositMoneyTests extends BaseTestSenior {
                 Arguments.of(-0.01, 0.0, ResponseMessages.INVALID_ACCOUNT_OR_AMOUNT.getValue()),
                 Arguments.of(0.0, 0.0, ResponseMessages.INVALID_ACCOUNT_OR_AMOUNT.getValue()));
     }
+
     @MethodSource("diffNegativeValue")
     @ParameterizedTest
     @ApiVersion(version = "with_database_with_fix")
@@ -274,10 +269,11 @@ public class DepositMoneyTests extends BaseTestSenior {
     public void userCannotDepositHisAccountMoneyLessThanMiniumLimit(Number incomingMoney, Number expectedBalance, String errorMessage) throws SQLException {
 
         final DepositRequest depositRequest = DepositRequest
-                .builder().id(userAccount).balance(incomingMoney.doubleValue()).build();
+                .builder().accountId(userAccount).amount(incomingMoney.doubleValue()).build();
 
-        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
-                , ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).extract().response().asString();
+        final String actualErrorMessage =
+                new ValidatableCrudRequester<DepositErrorResponse>(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY_ERROR,
+                        ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).getMessage();
 
         softly.assertThat(actualErrorMessage).isEqualTo(errorMessage);
 
@@ -296,6 +292,7 @@ public class DepositMoneyTests extends BaseTestSenior {
         softly.assertThat(transactionInfoListByAccountIdJDBC).isEmpty();
     }
 
+
     @Test
     @ApiVersion(version = "with_deletion")
     @DisplayName("Негативный тест: пользователь не может пополнить свой аккаунт суммой больше 5000")
@@ -304,10 +301,11 @@ public class DepositMoneyTests extends BaseTestSenior {
         double depositMoney = 5000.01;
 
         final DepositRequest depositRequest = DepositRequest
-                .builder().id(userAccount).balance(depositMoney).build();
+                .builder().accountId(userAccount).amount(depositMoney).build();
 
-        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
-                , ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).extract().response().asString();
+        final String actualErrorMessage =
+                new ValidatableCrudRequester<DepositErrorResponse>(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY_ERROR,
+                        ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).getMessage();
 
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.DEPOSIT_AMOUNT_CANNOT_EXCEED_5000.getValue());
 
@@ -327,10 +325,11 @@ public class DepositMoneyTests extends BaseTestSenior {
         double depositMoney = 5000.01;
 
         final DepositRequest depositRequest = DepositRequest
-                .builder().id(userAccount).balance(depositMoney).build();
+                .builder().accountId(userAccount).amount(depositMoney).build();
 
-        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
-                , ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).extract().response().asString();
+        final String actualErrorMessage =
+                new ValidatableCrudRequester<DepositErrorResponse>(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY_ERROR,
+                        ResponseSpecs.requestReturnsBadRequest()).POST(depositRequest).getMessage();
 
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.DEPOSIT_AMOUNT_CANNOT_EXCEED_5000.getValue());
 
@@ -358,10 +357,11 @@ public class DepositMoneyTests extends BaseTestSenior {
         final String authTokenUserSecond = createUserAndGetToken();
         final int secondUserAccount = createUserAccount(authTokenUserSecond);
 
-        final DepositRequest depositRequest = DepositRequest.builder().id(secondUserAccount).balance(depositMoney).build();
+        final DepositRequest depositRequest = DepositRequest.builder().accountId(secondUserAccount).amount(depositMoney).build();
 
-        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
-                , ResponseSpecs.requestReturnsForbidden()).POST(depositRequest).extract().response().asString();
+        final String actualErrorMessage =
+                new ValidatableCrudRequester<DepositErrorResponse>(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY_ERROR,
+                        ResponseSpecs.requestReturnsForbidden()).POST(depositRequest).getMessage();
 
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 
@@ -381,6 +381,7 @@ public class DepositMoneyTests extends BaseTestSenior {
 
     }
 
+
     @Test
     @DisplayName("Негативный тест: пользователь при попытке положить деньги на несуществующий аккаунт не пополняет свой счёт")
     public void userCannotDepositIntoNonExistedAccount() throws SQLException {
@@ -388,10 +389,11 @@ public class DepositMoneyTests extends BaseTestSenior {
         final Double depositMoney = RandomData.getMoney();
 
         final DepositRequest depositRequest = DepositRequest
-                .builder().id(AdminSteps.getMaxExistedAccountId() + 1).balance(depositMoney).build();
+                .builder().accountId(AdminSteps.getMaxExistedAccountId() + 1).amount(depositMoney).build();
 
-        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY
-                , ResponseSpecs.requestReturnsForbidden()).POST(depositRequest).extract().response().asString();
+        final String actualErrorMessage =
+                new ValidatableCrudRequester<DepositErrorResponse>(RequestSpecs.withToken(authUserToken), EndpointRequests.DEPOSIT_MONEY_ERROR,
+                        ResponseSpecs.requestReturnsForbidden()).POST(depositRequest).getMessage();
 
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.UNAUTHORIZED_ACCESS_TO_ACCOUNT.getValue());
 

@@ -14,6 +14,9 @@ public class UserTransactionHistory extends BaseElement {
         super(element);
         transactionInfo = element.text().split("\n")[0];
         transactionOwner = element.text().split("\n")[1];
-        repeatButtonText = element.text().split("\n")[2];
+        final String[] splittedText = element.text().split("\n");
+        if (splittedText.length == 3) {
+            repeatButtonText = element.text().split("\n")[2];
+        }
     }
 }

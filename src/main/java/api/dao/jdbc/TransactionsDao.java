@@ -1,5 +1,6 @@
 package api.dao.jdbc;
 
+import api.config.TransactionStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +20,6 @@ public class TransactionsDao {
     private int accountId;
     private int relatedAccountId;
     private String createdAt;
+    private TransactionStatus status;
+    private boolean fraudCheckRequired;
 }

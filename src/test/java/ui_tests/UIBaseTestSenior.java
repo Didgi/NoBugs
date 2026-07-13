@@ -1,7 +1,7 @@
-package ui_tests.senior_ui_tests;
+package ui_tests;
 
 import api.config.Config;
-import api_tests.iteraion2_senior.BaseTestSenior;
+import api_tests.BaseTestSenior;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import common.extensions.*;
@@ -23,6 +23,7 @@ import java.util.Map;
 @ExtendWith(TimingExtension.class)
 
 public class UIBaseTestSenior extends BaseTestSenior {
+
     @BeforeAll
     public static void setupSelenoid() {
         Configuration.remote = Config.getProperty("remote_host");

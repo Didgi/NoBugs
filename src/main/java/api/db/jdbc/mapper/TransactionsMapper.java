@@ -1,5 +1,6 @@
 package api.db.jdbc.mapper;
 
+import api.config.TransactionStatus;
 import api.dao.jdbc.TransactionsDao;
 
 import java.sql.ResultSet;
@@ -19,6 +20,8 @@ public class TransactionsMapper implements RowMapper<TransactionsDao> {
                 .accountId(resultSet.getInt("account_id"))
                 .relatedAccountId(resultSet.getInt("related_account_id"))
                 .createdAt(resultSet.getString("created_at"))
+                .status(TransactionStatus.valueOf(resultSet.getString("status")))
+                .fraudCheckRequired(resultSet.getBoolean("fraud_check_required"))
                 .build();
     }
 }
