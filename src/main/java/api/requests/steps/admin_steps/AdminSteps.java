@@ -1,16 +1,15 @@
 package api.requests.steps.admin_steps;
 
-import api.models.CreateUserRequest;
-import api.models.LoginRequest;
-import api.models.UserAccountResponse;
-import api.models.UsersResponse;
+import api.models.*;
 import api.models.comparison.ModelAssertions;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.requesters.CrudRequester;
 import api.requests.skelethon.requesters.ValidatableCrudRequester;
+import api.requests.steps.user_steps.UserSteps;
 import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import api.utils.RandomModelGenerator;
+import com.google.common.net.HttpHeaders;
 import common.SessionStorage;
 import io.restassured.common.mapper.TypeRef;
 
@@ -25,7 +24,7 @@ public class AdminSteps {
     public static String createUserAndGetToken() {
 
         final CreateUserRequest userRequest = RandomModelGenerator.generate(CreateUserRequest.class);
-        final UsersResponse userResponse = new ValidatableCrudRequester<UsersResponse>(RequestSpecs.withAdminToken(),
+        final CreateUserResponse userResponse = new ValidatableCrudRequester<CreateUserResponse>(RequestSpecs.withAdminToken(),
                 EndpointRequests.CREATE_USER, ResponseSpecs.entityWasCreated())
                 .POST(userRequest);
 
@@ -37,38 +36,17 @@ public class AdminSteps {
                 .build();
 
         String userToken = new CrudRequester(RequestSpecs.withAdminToken(), EndpointRequests.LOGIN, ResponseSpecs.requestReturnsOk())
-                .POST(loginRequest).extract().header("Authorization");
+                .POST(loginRequest).extract().header(HttpHeaders.AUTHORIZATION);
 
-        SessionStorage.addUserInfoToStorage(userToken, userResponse);
+        final UserProfileResponse userInfo = UserSteps.getUserInfo(userToken);
+
+        System.out.println("В storage положили инфо о созданном пользователе: " + userInfo);
+
+        SessionStorage.addUserInfoToStorage(userToken, userInfo);
 
         SessionStorage.addCreatedUser(userResponse.getId());
 
         return userToken;
-    }
-
-    private static List<Integer> getUsersId() {
-        final List<UsersResponse> users = new CrudRequester(RequestSpecs.withAdminToken(),
-                EndpointRequests.GET_USERS_BY_ADMIN, ResponseSpecs.requestReturnsOk())
-                .GET().assertThat().extract().as(new TypeRef<List<UsersResponse>>() {
-                });
-
-        return users.stream().map(UsersResponse::getId).toList();
-    }
-
-    private static List<UsersResponse> getUsersInfo() {
-        return new CrudRequester(RequestSpecs.withAdminToken(),
-                EndpointRequests.GET_USERS_BY_ADMIN, ResponseSpecs.requestReturnsOk())
-                .GET().assertThat().extract().as(new TypeRef<List<UsersResponse>>() {
-                });
-    }
-
-    public static void deleteAllUsers() {
-        final List<Integer> usersId = getUsersId();
-        usersId.forEach(id -> {
-            new CrudRequester(RequestSpecs.withAdminToken(), EndpointRequests.DELETE_USER, ResponseSpecs.requestReturnsOk())
-                    .DELETE(id);
-        });
-
     }
 
     public static void deleteUsersById() {
@@ -90,9 +68,9 @@ public class AdminSteps {
     }
 
     public static int getMaxExistedAccountId() {
-        final List<UsersResponse> usersResponses = new CrudRequester(RequestSpecs.withAdminToken(),
+        final List<CreateUserResponse> usersResponses = new CrudRequester(RequestSpecs.withAdminToken(),
                 EndpointRequests.GET_USERS_BY_ADMIN, ResponseSpecs.requestReturnsOk())
-                .GET().extract().as(new TypeRef<List<UsersResponse>>() {
+                .GET().extract().as(new TypeRef<List<CreateUserResponse>>() {
                 });
 
         final Optional<UserAccountResponse> maxExistedAccountIdOptional = usersResponses

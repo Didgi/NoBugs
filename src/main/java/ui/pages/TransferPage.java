@@ -2,19 +2,21 @@ package ui.pages;
 
 import api.config.AccountData;
 import api.config.Operations;
-import api.requests.steps.db_steps.DBSteps;
+import api.models.UserAccountResponse;
+import api.models.UserTransactionsResponse;
+import api.requests.steps.user_steps.UserSteps;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.SelenideElement;
-import common.retry.RetryUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import ui.elements.UserTransactionHistory;
 
 import java.math.BigDecimal;
-import java.sql.SQLException;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static api.config.AccountData.ACCOUNT_NUMBER_PREFIX;
@@ -45,9 +47,13 @@ public class TransferPage extends BasePage<TransferPage> {
 
     private final SelenideElement transferButton = $(byText("\uD83D\uDE80 Send Transfer"));
 
+    @Deprecated
     private final SelenideElement searchField = $(Selectors.byPlaceholder("Enter name to find transactions"));
 
+    @Deprecated
     private final SelenideElement searchTransactionsButton = $(byText("\uD83D\uDD0D Search Transactions"));
+
+    private final SelenideElement transactionHistoryTitle = $(byText("Transaction History"));
 
     public final static ElementsCollection transactionsList = $$("ul.list-group li");
 
@@ -165,7 +171,7 @@ public class TransferPage extends BasePage<TransferPage> {
     }
 
     public TransferPage checkTransferAgainPageOpened() {
-        searchField.shouldBe(visible);
+        transactionHistoryTitle.shouldBe(visible);
         return this;
     }
 
@@ -174,12 +180,14 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
+    @Deprecated
     public TransferPage inputValueInSearchField(String value) {
         searchField.click();
         searchField.setValue(value);
         return this;
     }
 
+    @Deprecated
     public TransferPage clickSearchTransactionsButton() {
         searchTransactionsButton.click();
         return this;
@@ -193,6 +201,17 @@ public class TransferPage extends BasePage<TransferPage> {
                 .findFirst().orElseThrow(() -> new AssertionError("Транзакция не найдена"))
                 .find(byText(NAME_REPEAT_BUTTON)).click();
         return this;
+    }
+
+    public boolean checkRepeatButtonNotAccessable(Operations operation) {
+        boolean result = false;
+        for (UserTransactionHistory userTransactionHistory : getTransactionsHistoryList()) {
+            if (userTransactionHistory.getTransactionInfo().contains(operation.name())) {
+                result = userTransactionHistory.getRepeatButtonText() == null;
+            }
+        }
+        return result;
+
     }
 
     public TransferPage checkTransferModalTitleRepeatVisible() {
@@ -258,12 +277,12 @@ public class TransferPage extends BasePage<TransferPage> {
         return transactionsTextTransfer
                 .stream()
                 .anyMatch(element -> element.getTransactionInfo().contains(operation.name()) &&
-                        element.getTransactionInfo().contains(String.valueOf(money)) &&
-                        element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
+                        element.getTransactionInfo().contains(String.valueOf(money)));
     }
 
-    public boolean checkTransaction(List<UserTransactionHistory> transactionsTextTransfer,
-                                    double money, Operations operation, String name) {
+    @Deprecated
+    public boolean checkTransactionOld(List<UserTransactionHistory> transactionsTextTransfer,
+                                       double money, Operations operation, String name) {
         transactionsTextTransfer.forEach(element -> {
             boolean operationMatch =
                     element.getTransactionInfo().contains(operation.name());
@@ -285,27 +304,68 @@ public class TransferPage extends BasePage<TransferPage> {
                         && element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
     }
 
+    public void checkTransactionDetails(List<UserTransactionHistory> transactionsTextTransfer,
+                                        double money, Operations operation,
+                                        UserAccountResponse userAccountResponse, String userToken) {
+
+        final List<UserTransactionsResponse> userTransactions = UserSteps.getUserTransactions(userToken, userAccountResponse.getId());
+        final UserTransactionsResponse userTransactionsResponse = userTransactions
+                .stream()
+                .filter(t -> t.getType().equals(operation))
+                .findFirst()
+                .orElse(null);
+
+        final UserTransactionHistory userTransactionHistory = transactionsTextTransfer
+                .stream()
+                .filter(
+                        element -> element.getTransactionInfo().contains(operation.name()) &&
+                                element.getTransactionInfo().contains(String.valueOf(money)) &&
+                                element.getTransactionOwner().contains(String.valueOf(userTransactionsResponse.getRelatedAccountId())))
+                .findFirst().orElseThrow();
+
+
+        final LocalDateTime dbTransactionTime = userTransactionsResponse.getTimestamp();
+
+        DateTimeFormatter uiFormatter =
+                DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm:ss");
+
+        String formattedDbDate = dbTransactionTime.format(uiFormatter);
+
+        //проверяем первую строку в истории - тип операции и количество денег
+        assertThat(userTransactionHistory.getTransactionInfo().contains(operation.name()) + " — $" + money);
+
+        //проверяем вторую строку в истории: время операции
+        assertThat(userTransactionHistory.getTransactionOwner().contains(formattedDbDate));
+
+        //проверяем вторую строку в истории: статус выполнения транзакции
+        final String transactionStatus = userTransactionsResponse.getStatus().name();
+        assertThat(userTransactionHistory.getTransactionInfo().contains("Status: " + transactionStatus));
+
+        //проверяем вторую строку в истории: статус выполнения проверки транзакции на мошенничество
+        final boolean fraudCheckRequired = userTransactionsResponse.isFraudCheckRequired();
+        assertThat(userTransactionHistory.getTransactionInfo().contains("Fraud: " + fraudCheckRequired));
+
+        //проверяем вторую строку в истории: аккаунт на который производилась операция
+        final int relatedAccountId = userTransactionsResponse.getRelatedAccountId();
+        assertThat(userTransactionHistory.getTransactionOwner().contains("Related Account ID: " + relatedAccountId));
+    }
+
     @Deprecated
     public String expectedSuccessfulTransferModalMessageOld(double money, int userAccount) {
         return "✅ Successfully transferred $" + money + " to account " + ACCOUNT_NUMBER_PREFIX.getValue() + userAccount + "!";
     }
 
-    public String expectedSuccessfulTransferModalMessage(double money, int userAccount) throws SQLException {
-        final String accountNumber = DBSteps.getAccountByAccountIdJDBC(userAccount).getAccountNumber();
+    public String expectedSuccessfulTransferModalMessage(double money, String accountNumber) {
         return "✅ Successfully transferred $" + money + " to account " + accountNumber + "!";
     }
 
-    @Deprecated
-    public TransferPage checkSelectedAccountInListRepeatModalOld(String userToken, int userAccount) {
-        final String actualAccountInfoInListRepeatModal = accountSelectorInRepeatModal.getSelectedOptionText();
-        final String expectedAccountInfoInListRepeatModal = getAccountInfoListOld(userToken, userAccount);
-        assertThat(actualAccountInfoInListRepeatModal).isEqualTo(expectedAccountInfoInListRepeatModal);
-        return this;
+    public String expectedSuccessfulTransferModalMessageInRepeatModal(double money, int accountIdFrom, int accountIdTo) {
+        return "✅ Transfer of $" + money + " successful from Account " + accountIdFrom + " to " + accountIdTo + "!";
     }
 
-    public TransferPage checkSelectedAccountInListRepeatModal(String userToken, int userAccount) {
+    public TransferPage checkSelectedAccountInListRepeatModal(String userToken, String userAccountNumber) {
         final String actualAccountInfoInListRepeatModal = accountSelectorInRepeatModal.getSelectedOptionText();
-        final String expectedAccountInfoInListRepeatModal = getAccountInfoList(userToken, userAccount);
+        final String expectedAccountInfoInListRepeatModal = getAccountInfoList(userToken, userAccountNumber);
         assertThat(actualAccountInfoInListRepeatModal).isEqualTo(expectedAccountInfoInListRepeatModal);
         return this;
     }

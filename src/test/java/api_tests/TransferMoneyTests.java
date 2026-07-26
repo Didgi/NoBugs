@@ -1,4 +1,4 @@
-package api_tests.iteraion2_senior;
+package api_tests;
 
 import api.config.Operations;
 import api.config.ResponseMessages;
@@ -75,9 +75,9 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(firstUserAccountJDBC.getBalance()).isEqualTo(expectedBalanceForFirstUser.doubleValue());
 
-        UserSteps.checkPositiveUserTransactions(authUserToken, userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT, moneyToTransfer);
+        UserSteps.checkUserTransactions(authUserToken, userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT, moneyToTransfer);
 
-        UserSteps.checkPositiveUserTransactionsDb(userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT.name(), moneyToTransfer);
+        UserSteps.checkUserTransactionsDb(userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT.name(), moneyToTransfer);
 
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(moneyToTransfer);
 
@@ -85,7 +85,7 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(secondUserAccountJDBC.getBalance()).isEqualTo(moneyToTransfer);
 
-        checkPositiveUserTransactions(authTokenUserSecond, secondUserAccount, userAccount, nowTime, Operations.TRANSFER_IN, moneyToTransfer);
+        checkUserTransactions(authTokenUserSecond, secondUserAccount, userAccount, nowTime, Operations.TRANSFER_IN, moneyToTransfer);
 
     }
 
@@ -238,9 +238,9 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(UserFirstAccountJDBC.getBalance()).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        checkPositiveUserTransactions(authUserToken, userAccount, userAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
+        checkUserTransactions(authUserToken, userAccount, userAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
 
-        checkPositiveUserTransactionsDb(userAccount, userAccountSecond, nowTime, Operations.TRANSFER_OUT.name(), depositTransferMoney);
+        checkUserTransactionsDb(userAccount, userAccountSecond, nowTime, Operations.TRANSFER_OUT.name(), depositTransferMoney);
 
         softly.assertThat(getUserBalance(authUserToken, userAccountSecond)).isEqualTo(depositTransferMoney);
 
@@ -248,9 +248,9 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(UserAccountSecondJDBC.getBalance()).isEqualTo(depositTransferMoney);
 
-        checkPositiveUserTransactions(authUserToken, userAccountSecond, userAccount, nowTime, Operations.TRANSFER_IN, depositTransferMoney);
+        checkUserTransactions(authUserToken, userAccountSecond, userAccount, nowTime, Operations.TRANSFER_IN, depositTransferMoney);
 
-        checkPositiveUserTransactionsDb(userAccountSecond, userAccount, nowTime, Operations.TRANSFER_IN.name(), depositTransferMoney);
+        checkUserTransactionsDb(userAccountSecond, userAccount, nowTime, Operations.TRANSFER_IN.name(), depositTransferMoney);
 
     }
 
@@ -280,9 +280,9 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(firstUserAccountJDBC.getBalance()).isEqualTo(DEFAULT_ZERO_BALANCE);
 
-        checkPositiveUserTransactions(authUserToken, userAccount, secondUserAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
+        checkUserTransactions(authUserToken, userAccount, secondUserAccountSecond, nowTime, Operations.TRANSFER_OUT, depositTransferMoney);
 
-        checkPositiveUserTransactionsDb(userAccount, secondUserAccountSecond, nowTime, Operations.TRANSFER_OUT.name(), depositTransferMoney);
+        checkUserTransactionsDb(userAccount, secondUserAccountSecond, nowTime, Operations.TRANSFER_OUT.name(), depositTransferMoney);
 
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountSecond)).isEqualTo(depositTransferMoney);
 
@@ -290,10 +290,10 @@ public class TransferMoneyTests extends BaseTestSenior {
 
         softly.assertThat(secondUserSecondAccountJDBC.getBalance()).isEqualTo(depositTransferMoney);
 
-        checkPositiveUserTransactions(authTokenUserSecond, secondUserAccountSecond, userAccount, nowTime,
+        checkUserTransactions(authTokenUserSecond, secondUserAccountSecond, userAccount, nowTime,
                 Operations.TRANSFER_IN, depositTransferMoney);
 
-        checkPositiveUserTransactionsDb(secondUserAccountSecond, userAccount, nowTime,
+        checkUserTransactionsDb(secondUserAccountSecond, userAccount, nowTime,
                 Operations.TRANSFER_IN.name(), depositTransferMoney);
 
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccountFirst)).isEqualTo(DEFAULT_ZERO_BALANCE);

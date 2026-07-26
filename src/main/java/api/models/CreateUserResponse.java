@@ -9,7 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UsersResponse extends BaseModel {
+public class CreateUserResponse extends BaseModel {
     private int id;
     private String username;
     private String password;

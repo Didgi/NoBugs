@@ -1,12 +1,13 @@
-package api_tests.iteraion2_senior;
+package api_tests;
 
 import api.config.ResponseMessages;
 import api.dao.comparison_db.ModelAssertionsDb;
 import api.dao.jdbc.CustomersDao;
 import api.dao.jpa.entities.CustomerEntity;
+import api.models.ChangeUserErrorResponse;
 import api.models.ChangeUserRequest;
 import api.models.ChangeUserResponse;
-import api.models.UsersResponse;
+import api.models.UserProfileResponse;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.requesters.CrudRequester;
 import api.requests.skelethon.requesters.ValidatableCrudRequester;
@@ -48,11 +49,9 @@ public class ChangeUserNameTests extends BaseTestSenior {
                         EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
                         .PUT(changeUserRequest);
 
-        softly.assertThat(changeUserResponse.getCustomer().getName()).isEqualTo(updatedUserName);
+        softly.assertThat(changeUserResponse.getName()).isEqualTo(updatedUserName);
 
-        softly.assertThat(changeUserResponse.getMessage()).isEqualTo(ResponseMessages.PROFILE_UPDATED_SUCCESSFULLY.getValue());
-
-        UsersResponse userInfo = getUserInfo(authUserToken);
+        UserProfileResponse userInfo = getUserInfo(authUserToken);
 
         softly.assertThat(userInfo.getName()).isEqualTo(updatedUserName);
 
@@ -81,15 +80,15 @@ public class ChangeUserNameTests extends BaseTestSenior {
 
         final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().name(updatedUserName).build();
 
-        final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken),
-                EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsBadRequest())
-                .PUT(changeUserRequest).extract().response().asString();
+        final String actualErrorMessage = new ValidatableCrudRequester<ChangeUserErrorResponse>(RequestSpecs.withToken(authUserToken),
+                EndpointRequests.UPDATE_USER_ERROR, ResponseSpecs.requestReturnsBadRequest())
+                .PUT(changeUserRequest).getMessage();
 
         softly.assertThat(actualErrorMessage).isEqualTo(ResponseMessages.NAME_MUST_CONTAIN_TWO_WORDS_WITH_LETTERS_ONLY.getValue());
 
         softly.assertThat(getUserInfo(authUserToken).getName()).isNull();
 
-        final UsersResponse userInfo = getUserInfo(authUserToken);
+        final UserProfileResponse userInfo = getUserInfo(authUserToken);
 
         final CustomerEntity userByUserNameJpa = DBSteps.getUserByIdJPA(userInfo.getId());
 
@@ -104,12 +103,12 @@ public class ChangeUserNameTests extends BaseTestSenior {
         final ChangeUserRequest changeUserRequest = ChangeUserRequest.builder().build();
 
         final String actualErrorMessage = new CrudRequester(RequestSpecs.withToken(authUserToken),
-                EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsInternalServiceError())
+                EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
                 .PUT(changeUserRequest).extract().response().asString();
 
         softly.assertThat(actualErrorMessage.isEmpty());
 
-        final UsersResponse userInfo = getUserInfo(authUserToken);
+        final UserProfileResponse userInfo = getUserInfo(authUserToken);
 
         CustomersDao customersDao = DBSteps.getUserByUserNameJDBC(userInfo.getUsername());
 
@@ -129,9 +128,9 @@ public class ChangeUserNameTests extends BaseTestSenior {
 
         successfulChangeUserName(changeUserRequest, secondUserAuthToken);
 
-        final UsersResponse firstUserInfo = getUserInfo(authUserToken);
+        final UserProfileResponse firstUserInfo = getUserInfo(authUserToken);
 
-        final UsersResponse secondUserInfo = getUserInfo(secondUserAuthToken);
+        final UserProfileResponse secondUserInfo = getUserInfo(secondUserAuthToken);
 
         CustomersDao customersDaoFirst = DBSteps.getUserByUserNameJDBC(firstUserInfo.getUsername());
 

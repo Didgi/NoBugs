@@ -1,8 +1,7 @@
-package ui_tests.senior_ui_tests;
+package ui_tests;
 
 import api.dao.jdbc.AccountsDao;
 import api.dao.jdbc.TransactionsDao;
-import api.dao.jpa.entities.AccountsEntity;
 import api.models.UserAccountResponse;
 import api.models.UserTransactionsResponse;
 import api.requests.steps.db_steps.DBSteps;
@@ -36,7 +35,8 @@ public class DepositTests extends UIBaseTestSenior {
         int expectedListSize = 2;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
@@ -60,26 +60,22 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession()
     @UserSession()
     @Test
-    @ApiVersion(version = "with_database_with_fix")
+    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: пользователь пополняет свой аккаунт валидной суммой")
     public void userCanDepositHisAccount() throws SQLException {
 
         int expectedListSize = 2;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
-        final UserAccountResponse userAccountInfo = UserSteps.getUserInfo(authUserToken)
-                .getAccounts()
-                .stream()
-                .filter(userAccountResponse -> userAccountResponse.getId() == userAccount)
-                .findFirst().get();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userAccountInfo.getAccountNumber())
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .checkSelectedAccountInList(authUserToken, userAccountInfo.getAccountNumber())
                 .inputAmountValue(expectedRandomMoney)
                 .clickDepositButton();
 
@@ -107,15 +103,18 @@ public class DepositTests extends UIBaseTestSenior {
         int expectedListSize = 3;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userFirstAccount = SessionStorage.getUserAccountByUserNumber();
-        final int userSecondAccount = SessionStorage.getUserAccountByUserToken(authUserToken, 2);
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userFirstAccount = userAccountInfo.getId();
+        final UserAccountResponse userSecondAccountInfo = SessionStorage.getUserAccountByUserNumber(1, 2);
+        final int userSecondAccount = userSecondAccountInfo.getId();
+
 
         depositPage.open()
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userFirstAccount)
-                .checkSelectedAccountInList(authUserToken, userFirstAccount).
+                .checkSelectedAccountInList(authUserToken, userAccountInfo.getAccountNumber()).
                 inputAmountValue(expectedRandomMoney).clickDepositButton();
 
         final String expectedAlertText = depositPage.expectedSuccessfullyDepositModalMessage(expectedRandomMoney, userFirstAccount);
@@ -129,7 +128,7 @@ public class DepositTests extends UIBaseTestSenior {
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userSecondAccount)
-                .checkSelectedAccountInList(authUserToken, userSecondAccount)
+                .checkSelectedAccountInList(authUserToken, userSecondAccountInfo.getAccountNumber())
                 .inputAmountValue(expectedRandomMoney).clickDepositButton();
 
         final String expectedSecondAlertText = depositPage
@@ -149,22 +148,25 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession(amountAccounts = 2)
     @Test
-    @ApiVersion(version = "with_database_with_fix")
+    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: пользователь может положить деньги на свои любые аккаунты")
     public void userCanDepositMoneyIntoHisDiffAccounts() throws SQLException {
 
         int expectedListSize = 3;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userFirstAccount = SessionStorage.getUserAccountByUserNumber();
-        final int userSecondAccount = SessionStorage.getUserAccountByUserToken(authUserToken, 2);
+        final List<UserAccountResponse> userAccounts = SessionStorage.getUserAccountsByToken(authUserToken);
+        final UserAccountResponse userFirstAccountInfo = userAccounts.get(0);
+        final int userFirstAccount = userFirstAccountInfo.getId();
+        final UserAccountResponse userSecondAccountInfo = userAccounts.get(1);
+        final int userSecondAccount = userSecondAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userFirstAccount)
-                .checkSelectedAccountInList(authUserToken, userFirstAccount).
+                .checkSelectedAccountInList(authUserToken, userFirstAccountInfo.getAccountNumber()).
                 inputAmountValue(expectedRandomMoney).clickDepositButton();
 
         final String expectedAlertText = depositPage.expectedSuccessfullyDepositModalMessage(expectedRandomMoney, userFirstAccount);
@@ -178,7 +180,7 @@ public class DepositTests extends UIBaseTestSenior {
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userSecondAccount)
-                .checkSelectedAccountInList(authUserToken, userSecondAccount)
+                .checkSelectedAccountInList(authUserToken, userSecondAccountInfo.getAccountNumber())
                 .inputAmountValue(expectedRandomMoney).clickDepositButton();
 
         final String expectedSecondAlertText = depositPage
@@ -214,7 +216,8 @@ public class DepositTests extends UIBaseTestSenior {
         int expectedListSize = 2;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
@@ -234,7 +237,7 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "with_database_with_fix")
+    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке пополнить свой аккаунт суммой меньше 0.01")
     public void userSeesErrorMessageWhenDepositHisAccountWithLessThanMiniumLimitValue() throws SQLException {
 
@@ -243,14 +246,15 @@ public class DepositTests extends UIBaseTestSenior {
         int expectedListSize = 2;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .checkSelectedAccountInList(authUserToken, userAccountInfo.getAccountNumber())
                 .inputAmountValue(negativeMoneyValue).clickDepositButton()
                 .checkMessageFromModalPageAndAccept(DEPOSIT_ERROR_NEGATIVE_VALUE.getValue())
                 .checkDepositPageOpened();
@@ -275,7 +279,8 @@ public class DepositTests extends UIBaseTestSenior {
         int expectedListSize = 2;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
@@ -294,7 +299,7 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "with_database_with_fix")
+    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке пополнить свой аккаунт суммой больше 5000")
     public void userSeesErrorMessageWhenDepositHisAccountWithValueMoreThanMaximum5000() throws SQLException {
 
@@ -303,14 +308,15 @@ public class DepositTests extends UIBaseTestSenior {
         int expectedListSize = 2;
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .checkAccountSize(expectedListSize)
                 .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .checkSelectedAccountInList(authUserToken, userAccountInfo.getAccountNumber())
                 .inputAmountValue(maximumValue).clickDepositButton()
                 .checkMessageFromModalPageAndAccept(DEPOSIT_ERROR_EXCEEDED_MAXIMUM_VALUE.getValue())
                 .checkDepositPageOpened();
@@ -343,7 +349,8 @@ public class DepositTests extends UIBaseTestSenior {
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAmountOld() {
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
@@ -354,7 +361,7 @@ public class DepositTests extends UIBaseTestSenior {
                 .checkMessageFromModalPageAndAccept(DEPOSIT_ERROR_WITHOUT_AMOUNT.getValue())
                 .checkDepositPageOpened();
 
-        final List<UserTransactionsResponse> userTransactions = UserSteps.getUserTransactions(authUserToken, userAccount);
+        final List<UserTransactionsResponse> userTransactions = UserSteps.getUserTransactionsOld(authUserToken, userAccount);
         assertThat(userTransactions).isEmpty();
 
     }
@@ -362,18 +369,19 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "with_database_with_fix")
+    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке нажатия 'Deposit' без указания суммы")
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAmount() throws SQLException {
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
                 .checkDefaultValueInAccountList()
                 .selectAccount(userAccount)
-                .checkSelectedAccountInList(authUserToken, userAccount)
+                .checkSelectedAccountInList(authUserToken, userAccountInfo.getAccountNumber())
                 .clickDepositButton()
                 .checkMessageFromModalPageAndAccept(DEPOSIT_ERROR_WITHOUT_AMOUNT.getValue())
                 .checkDepositPageOpened();
@@ -394,7 +402,8 @@ public class DepositTests extends UIBaseTestSenior {
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAccountWhenAccountWasChooseBefore() throws SQLException {
 
         final String authUserToken = SessionStorage.getUserTokenFromStorage();
-        final int userAccount = SessionStorage.getUserAccountByUserNumber();
+        final UserAccountResponse userAccountInfo = SessionStorage.getUserAccountByUserNumber();
+        final int userAccount = userAccountInfo.getId();
 
         depositPage.open()
                 .checkDepositPageOpened()
@@ -413,4 +422,5 @@ public class DepositTests extends UIBaseTestSenior {
         final List<TransactionsDao> transactionInfoListByAccountIdJDBC = DBSteps.getTransactionInfoListByAccountIdJDBC(userAccount);
         assertThat(transactionInfoListByAccountIdJDBC).isEmpty();
     }
+
 }

@@ -1,7 +1,8 @@
 package api.requests.steps.user_steps;
 
+import api.config.AccountData;
 import api.config.Operations;
-import api.config.ResponseMessages;
+import api.config.TransactionStatus;
 import api.dao.jdbc.TransactionsDao;
 import api.models.*;
 import api.models.comparison.ModelAssertions;
@@ -26,7 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import static api.config.AccountData.ACCOUNT_NUMBER_PREFIX;
+import static api.config.ResponseMessages.TRANSFER_COMPLETE;
 
 @Setter
 @Getter
@@ -41,10 +42,12 @@ public class UserSteps {
     }
 
     public static int createUserAccount(String userToken) {
-        final UserAccountResponse userAccountResponse =
-                new ValidatableCrudRequester<UserAccountResponse>(RequestSpecs.withToken(userToken),
+        final CreateUserAccountResponse userAccountResponse =
+                new ValidatableCrudRequester<CreateUserAccountResponse>(RequestSpecs.withToken(userToken),
                         EndpointRequests.CREATE_USER_ACCOUNT,
                         ResponseSpecs.entityWasCreated()).POST(null);
+        final List<UserAccountResponse> userAccounts = getUserAccounts(userToken);
+        SessionStorage.replaceUserInfoInStorage(userToken, null, userAccounts);
         return userAccountResponse.getId();
 
     }
@@ -62,30 +65,8 @@ public class UserSteps {
                 ResponseSpecs.requestReturnsOk()).GET().assertThat().extract()
                 .as(new TypeRef<List<UserAccountResponse>>() {
                 });
-        return userAccountResponse.stream().map(UserAccountResponse::getId).toList();
+        return null;
 
-    }
-
-    public static List<Integer> getUserAccountIds() {
-
-        return SessionStorage.getAllUserTokensFromStorage().stream().flatMap(
-                userToken ->
-                    new CrudRequester(RequestSpecs.withToken(userToken),
-                            EndpointRequests.GET_USER_ACCOUNTS,
-                            ResponseSpecs.requestReturnsOk()).GET().assertThat().extract()
-                            .as(new TypeRef<List<UserAccountResponse>>() {
-                            })
-                            .stream()
-        ).map(UserAccountResponse::getId).toList();
-
-    }
-
-    public static void deleteUserAccounts(String userToken) {
-        getUserAccountIds(userToken).forEach(accountId -> {
-            new CrudRequester(RequestSpecs.withToken(userToken),
-                    EndpointRequests.DELETE_USER_ACCOUNT,
-                    ResponseSpecs.requestReturnsOk()).DELETE(accountId);
-        });
     }
 
     public static double getUserBalance(String userToken, int accountId) {
@@ -98,15 +79,35 @@ public class UserSteps {
         return BigDecimal.valueOf(raw).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
-    public static List<UserTransactionsResponse> getUserTransactions(String userToken, int accountId) {
+    public static List<UserTransactionsResponse> getUserTransactionsOld(String userToken, int accountId) {
         final Optional<UserAccountResponse> foundAccount = getUserAccounts(userToken).stream()
                 .filter(accounts -> accounts.getId() == accountId).findFirst();
+        return null;
 
-        return foundAccount.map(UserAccountResponse::getTransactions).orElse(null);
     }
 
-    public static void checkPositiveUserTransactions(String userToken, int fromAccountId, int toAccountId,
-                                                     ZonedDateTime nowTime, Operations operation, double moneyToTransfer) {
+    public static UserTransactionsResponse getUserTransactions(String userToken, int accountId, Operations operation) {
+        final List<UserTransactionsResponse> userTransactionsResponses =
+                new CrudRequester(RequestSpecs.withToken(userToken), EndpointRequests.GET_USER_TRANSACTIONS,
+                        ResponseSpecs.requestReturnsOk())
+                        .GET(accountId).assertThat().extract().as(new TypeRef<List<UserTransactionsResponse>>() {
+                        });
+
+        return userTransactionsResponses.stream().filter(userTransactionsResponse ->
+                userTransactionsResponse.getType().equals(operation)).findFirst().orElse(null);
+    }
+
+    public static List<UserTransactionsResponse> getUserTransactions(String userToken, int accountId) {
+        return new CrudRequester(RequestSpecs.withToken(userToken),
+                EndpointRequests.GET_USER_TRANSACTIONS,
+                ResponseSpecs.requestReturnsOk())
+                .GET(accountId).assertThat().extract().as(new TypeRef<List<UserTransactionsResponse>>() {
+                });
+    }
+
+
+    public static void checkUserTransactions(String userToken, int fromAccountId, int toAccountId,
+                                             ZonedDateTime nowTime, Operations operation, double moneyToTransfer) {
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(userToken, fromAccountId);
 
         final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
@@ -117,13 +118,31 @@ public class UserSteps {
         softly.assertThat(userFirstTransactionsResponse.getType()).isEqualTo(operation);
         softly.assertThat(userFirstTransactionsResponse.getTimestamp())
                 .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
-                nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
+                        nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
         softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(toAccountId);
-
     }
 
-    public static void checkPositiveUserTransactionsDb(int fromAccountId, int toAccountId,
-                                                       ZonedDateTime nowTime, String operation, double moneyToTransfer) throws SQLException {
+    public static void checkUserTransactions(String userToken, int fromAccountId, int toAccountId,
+                                             ZonedDateTime nowTime, Operations operation, double moneyToTransfer,
+                                             TransactionStatus status, boolean fraudCheckRequired) {
+        final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(userToken, fromAccountId);
+
+        final UserTransactionsResponse userFirstTransactionsResponse = userFirstTransactions
+                .stream().max(Comparator.comparingInt(UserTransactionsResponse::getId)).orElseThrow();
+
+        softly.assertThat(userFirstTransactionsResponse.getId()).isGreaterThan(DEFAULT_ZERO_ACCOUNT_ID);
+        softly.assertThat(userFirstTransactionsResponse.getAmount()).isEqualTo(moneyToTransfer);
+        softly.assertThat(userFirstTransactionsResponse.getType()).isEqualTo(operation);
+        softly.assertThat(userFirstTransactionsResponse.getTimestamp())
+                .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
+                        nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
+        softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(toAccountId);
+        softly.assertThat(userFirstTransactionsResponse.getStatus()).isEqualTo(status);
+        softly.assertThat(userFirstTransactionsResponse.isFraudCheckRequired()).isEqualTo(fraudCheckRequired);
+    }
+
+    public static void checkUserTransactionsDb(int fromAccountId, int toAccountId,
+                                               ZonedDateTime nowTime, String operation, double moneyToTransfer) throws SQLException {
 
         final TransactionsDao transactionsDao = DBSteps.getTransactionInfoListByAccountIdJDBC(fromAccountId)
                 .stream().max(Comparator.comparing(TransactionsDao::getId)).orElseThrow();
@@ -135,6 +154,25 @@ public class UserSteps {
                 .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                         nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
         softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(toAccountId);
+
+    }
+
+    public static void checkUserTransactionsDb(int fromAccountId, int toAccountId,
+                                               ZonedDateTime nowTime, String operation, double moneyToTransfer,
+                                               TransactionStatus status, boolean fraudCheckRequired) throws SQLException {
+
+        final TransactionsDao transactionsDao = DBSteps.getTransactionInfoListByAccountIdJDBC(fromAccountId)
+                .stream().max(Comparator.comparing(TransactionsDao::getId)).orElseThrow();
+
+        softly.assertThat(transactionsDao.getId()).isGreaterThan(DEFAULT_ZERO_ACCOUNT_ID);
+        softly.assertThat(transactionsDao.getAmount()).isEqualTo(moneyToTransfer);
+        softly.assertThat(transactionsDao.getType()).isEqualTo(operation);
+        softly.assertThat(transactionsDao.getTimestamp().toLocalDateTime())
+                .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
+                        nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
+        softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(toAccountId);
+        softly.assertThat(transactionsDao.getStatus()).isEqualTo(status);
+        softly.assertThat(transactionsDao.isFraudCheckRequired()).isEqualTo(fraudCheckRequired);
 
     }
 
@@ -160,22 +198,21 @@ public class UserSteps {
     public static void depositMoney(String userToken, int accountId, double money) {
         DepositRequest depositRequest = new DepositRequest(accountId, money);
 
-        final UserAccountResponse userAccountResponse =
-                new ValidatableCrudRequester<UserAccountResponse>(RequestSpecs.withToken(userToken),
-                        EndpointRequests.DEPOSIT_MONEY,
-                        ResponseSpecs.requestReturnsOk()).POST(depositRequest);
+        DepositResponse userAccountResponse =
+                new ValidatableCrudRequester<DepositResponse>(RequestSpecs.withToken(userToken),
+                        EndpointRequests.DEPOSIT_MONEY, ResponseSpecs.requestReturnsOk())
+                        .POST(depositRequest);
 
-        softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getId());
+        softly.assertThat(userAccountResponse.getId()).isEqualTo(depositRequest.getAccountId());
         softly.assertThat(userAccountResponse.getAccountNumber())
-                .startsWith(ACCOUNT_NUMBER_PREFIX.getValue());
-        softly.assertThat(userAccountResponse.getBalance()).isEqualTo(depositRequest.getBalance());
-        softly.assertThat(userAccountResponse.getTransactions()).isNotEmpty();
+                .startsWith(AccountData.ACCOUNT_NUMBER_PREFIX.getValue());
+        softly.assertThat(userAccountResponse.getDepositAmount()).isEqualTo(depositRequest.getAmount());
     }
 
     public static void depositMoneyWOCheckResponse(String userToken, int accountId, double money) {
         DepositRequest depositRequest = new DepositRequest(accountId, money);
 
-        new ValidatableCrudRequester<UserAccountResponse>(RequestSpecs.withToken(userToken), EndpointRequests.DEPOSIT_MONEY,
+        new ValidatableCrudRequester<DepositResponse>(RequestSpecs.withToken(userToken), EndpointRequests.DEPOSIT_MONEY,
                 ResponseSpecs.requestReturnsOk()).POST(depositRequest);
     }
 
@@ -195,6 +232,21 @@ public class UserSteps {
         return transferResponse;
     }
 
+    public static TransferFraudCheckResponse successfulTransferMoneyBetweenAccountsWithFraudCheck(String userToken, int senderAccountId,
+                                                                                                  int receiverAccountId, double money) {
+        final TransferRequest transferRequest = TransferRequest.builder().senderAccountId(senderAccountId)
+                .receiverAccountId(receiverAccountId)
+                .amount(money).build();
+
+        final TransferFraudCheckResponse transferResponse =
+                new ValidatableCrudRequester<TransferFraudCheckResponse>(RequestSpecs.withToken(userToken)
+                        , EndpointRequests.TRANSFER_MONEY_FRAUD_CHECK, ResponseSpecs.requestReturnsOk())
+                        .POST(transferRequest);
+
+        ModelAssertions.assertThatModels(transferRequest, transferResponse).match();
+
+        return transferResponse;
+    }
 
     public static String failedTransferMoneyBetweenAccounts(String userToken, int senderAccountId,
                                                             int receiverAccountId, double money,
@@ -203,12 +255,12 @@ public class UserSteps {
                 .receiverAccountId(receiverAccountId)
                 .amount(money).build();
 
-        return new CrudRequester(RequestSpecs.withToken(userToken), EndpointRequests.TRANSFER_MONEY
-                , responseSpec).POST(transferRequest).extract().response().asString();
+        return new ValidatableCrudRequester<TransferErrorResponse>(RequestSpecs.withToken(userToken), EndpointRequests.TRANSFER_MONEY_ERROR
+                , responseSpec).POST(transferRequest).getMessage();
     }
 
-    public static UsersResponse getUserInfo(String userToken) {
-        return new ValidatableCrudRequester<UsersResponse>(RequestSpecs.withToken(userToken),
+    public static UserProfileResponse getUserInfo(String userToken) {
+        return new ValidatableCrudRequester<UserProfileResponse>(RequestSpecs.withToken(userToken),
                 EndpointRequests.GET_USER_INFO, ResponseSpecs.requestReturnsOk()).GET();
     }
 
@@ -218,9 +270,16 @@ public class UserSteps {
                         EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
                         .PUT(changeUserRequest);
 
-        softly.assertThat(changeUserResponse.getCustomer().getName()).isEqualTo(changeUserRequest.getName());
-        softly.assertThat(changeUserResponse.getMessage())
-                .isEqualTo(ResponseMessages.PROFILE_UPDATED_SUCCESSFULLY.getValue());
+        softly.assertThat(changeUserResponse.getName()).isEqualTo(changeUserRequest.getName());
+    }
+
+    public static void transferComplete(String userToken, int transactionId) {
+        TransferCompleteResponse transferCompleteResponse = new CrudRequester(RequestSpecs.withToken(userToken), EndpointRequests.TRANSFER_MONEY_COMPLETE,
+                ResponseSpecs.requestReturnsOk())
+                .POST(transactionId).assertThat().extract().as(TransferCompleteResponse.class);
+
+        softly.assertThat(transferCompleteResponse.getMessage()).isEqualTo(TRANSFER_COMPLETE.getValue());
+        softly.assertThat(transferCompleteResponse.getTransactionId()).isEqualTo(transactionId);
     }
 
     public static void repeatAction(int times, Runnable runnable) {
