@@ -83,7 +83,6 @@ public class DepositMoneyTests extends BaseTestSenior {
 
     @MethodSource("diffPositiveValue")
     @ParameterizedTest
-    @ApiVersion(version = "with_database_with_fix")
     @DisplayName("Позитивный тест: пользователь пополняет свой аккаунт валидной суммой")
     public void userCanDepositHisAccount(double incomingMoney, Number expectedBalance) throws SQLException {
 
@@ -264,7 +263,6 @@ public class DepositMoneyTests extends BaseTestSenior {
 
     @MethodSource("diffNegativeValue")
     @ParameterizedTest
-    @ApiVersion(version = "with_database_with_fix")
     @DisplayName("Негативный тест: пользователь не может пополнить свой аккаунт суммой меньше 0.01")
     public void userCannotDepositHisAccountMoneyLessThanMiniumLimit(Number incomingMoney, Number expectedBalance, String errorMessage) throws SQLException {
 
@@ -318,7 +316,6 @@ public class DepositMoneyTests extends BaseTestSenior {
     }
 
     @Test
-    @ApiVersion(version = "with_database_with_fix")
     @DisplayName("Негативный тест: пользователь не может пополнить свой аккаунт суммой больше 5000")
     public void userCannotDepositHisAccountMoneyMoreThanMaximumValue5000() throws SQLException {
 

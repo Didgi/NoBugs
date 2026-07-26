@@ -97,7 +97,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: пользователь может переводить деньги на аккаунт другого пользователя")
     public void userCanTransferMoneyToSomeoneElseExistedAccount() throws SQLException {
 
@@ -200,7 +199,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession(amountAccounts = 2)
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: пользователь может переводить деньги между своими же аккаунтами")
     public void userCanTransferMoneyBetweenHisAccounts() throws SQLException {
 
@@ -296,7 +294,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: проверка возможности перевода денег на тот же аккаунт с которого происходит перевод")
     public void userCanTransferMoneyToSameAccount() throws SQLException {
 
@@ -402,7 +399,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода отрицательной суммы")
     public void userSeesErrorMessageWhenTransferMoneyLessThanMiniumLimitValue() throws SQLException {
 
@@ -520,7 +516,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода суммы больше допустимой 10000")
     public void userSeesErrorMessageWhenTransferMoneyMoreThanMaximumLimitValue() throws SQLException {
 
@@ -634,7 +629,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег, когда баланс равен 0")
     public void userSeesErrorMessageWhenHisBalanceIsZeroAndHeTransferMoney() throws SQLException {
 
@@ -758,7 +752,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег без заполнения обязательных полей")
     public void userSeesErrorMessageWhenTryTransferWithoutRequiredFields() throws SQLException {
 
@@ -874,7 +867,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег на несуществующий аккаунт")
     public void userSeesErrorMessageWhenTransferMoneyToUnexistedAccount() throws SQLException {
 
@@ -979,7 +971,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег с указанием " +
             " имени пользователя аккаунта другим регистром, когда имя задано")
     public void userSeesErrorMessageWhenTransferMoneyWithIncorrectNameAccountWhenNameIsUpperCase() throws SQLException {
@@ -1103,7 +1094,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке перевода денег с указанием " +
             " аккаунта пользователя другим регистром")
     public void userSeesErrorMessageWhenTransferMoneyWithIncorrectAccount() throws SQLException {
@@ -1250,7 +1240,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 1)
     @UserSession(amountAccounts = 2)
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: проверка, что пользователь может просмотреть выполненные транзакции по своим аккаунтам")
     public void userCanSeeHisTransactionHistory() {
 
@@ -1608,7 +1597,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession()
     @UserSession(amountAccounts = 2)
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка, что пользователь не может выполнить повторно ранее выполненные " +
             "транзакции с типом DEPOSIT")
     public void userCannotRepeatHisTransactionForDepositFromTransactionHistory() {
@@ -1732,7 +1720,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: проверка, что пользователь может выполнить повторно ранее выполненные " +
             "транзакции c типом TRANSFER_OUT")
     public void userCanRepeatHisTransactionsForTransferFromTransactionHistory() throws SQLException {
@@ -1868,7 +1855,6 @@ public class TransferTests extends UIBaseTestSenior {
     @AdminSession(amountUsers = 2)
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка, что пользователь не может выполнить повторно ранее выполненные " +
             "транзакции, если указано значение меньше 0.01")
     public void userCanRepeatHisTransactionsFromTransactionHistoryWhenAmountLessMinimumValue() throws SQLException {

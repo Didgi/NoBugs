@@ -60,7 +60,6 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession()
     @UserSession()
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: пользователь пополняет свой аккаунт валидной суммой")
     public void userCanDepositHisAccount() throws SQLException {
 
@@ -148,7 +147,6 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession(amountAccounts = 2)
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Позитивный тест: пользователь может положить деньги на свои любые аккаунты")
     public void userCanDepositMoneyIntoHisDiffAccounts() throws SQLException {
 
@@ -237,7 +235,6 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке пополнить свой аккаунт суммой меньше 0.01")
     public void userSeesErrorMessageWhenDepositHisAccountWithLessThanMiniumLimitValue() throws SQLException {
 
@@ -299,7 +296,6 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке пополнить свой аккаунт суммой больше 5000")
     public void userSeesErrorMessageWhenDepositHisAccountWithValueMoreThanMaximum5000() throws SQLException {
 
@@ -369,7 +365,6 @@ public class DepositTests extends UIBaseTestSenior {
     @AdminSession
     @UserSession
     @Test
-    @ApiVersion(version = "preprod_version")
     @DisplayName("Негативный тест: проверка отображения ошибки при попытке нажатия 'Deposit' без указания суммы")
     public void userSeesErrorMessageWhenClickDepositButtonWithoutAmount() throws SQLException {
 
