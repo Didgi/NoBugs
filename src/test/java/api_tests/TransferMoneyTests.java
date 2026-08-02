@@ -132,7 +132,6 @@ public class TransferMoneyTests extends BaseTestSenior {
 
     @MethodSource("diffNegativeValue")
     @ParameterizedTest
-    @ApiVersion(version = "with_database_with_fix")
     @DisplayName("Негативный тест: пользователь не может переводить сумму меньше 0.01")
     public void userCannotTransferMoneyToSomeoneElseExistedAccountLessThanMinimumLimit(double moneyToDeposit,
                                                                                        double moneyToTransfer,

@@ -4,7 +4,6 @@ import WM.Mapper.*;
 import WM.client.WireMockClient;
 import api.config.Config;
 import api.config.TransactionFraudCheckDecision;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import common.annotations.FraudCheckMock;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -55,7 +54,7 @@ public class FraudCheckExtension implements BeforeEachCallback, AfterEachCallbac
         } else if (mockConfig.timeout()) {
             ScenariosMapper mapper = mappers.get(mockConfig.decision());
             responseBody = mapper.toJson(mockConfig);
-            final int timeoutValue = Integer.parseInt(Config.getProperty("wireMockTimeout"));
+            final int timeoutValue = Integer.parseInt(Config.getProperty("wire_mock_timeout"));
             wireMock.register(WireMockClient.buildResponse(responseBody, SC_OK, timeoutValue));
         }
     }
