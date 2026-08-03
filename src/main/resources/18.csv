@@ -3,4 +3,3 @@ firstNumber, secondNumber, expectedGcd
 101, 103, 1
 0, 10, 10
 15, 0, 15
-0,0,0
