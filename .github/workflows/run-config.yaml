@@ -27,8 +27,8 @@ jobs:
       - name: Run Checkstyle
         run: mvn checkstyle:checkstyle #заменить на локальный мавен
       - name: Prepare tag
-        run: echo "SHORT_COMMIT_HASH=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        run: echo "SHORT_COMMIT_HASH=${{GITHUB_SHA::7}}" >> $GITHUB_ENV
       - name: build docker image and push to docker hub
-        run: infra/push-tests.sh ${ env.SHORT_SHA }
+        run: infra/push-tests.sh ${{ env.SHORT_SHA }}
       #- name: Run tests
       #  run: mvn clean test
