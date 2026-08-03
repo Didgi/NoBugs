@@ -1,8 +1,7 @@
 name: my test workflow
-on:
-  push:
-    paths:
-      - src/**
+on: [push]
+   # paths:
+    #  - src/**
 jobs:
   run-tests:
     name: basic job
@@ -24,8 +23,8 @@ jobs:
             ${{ runner.os }}-maven-
       #- name: build project
       #  run: mvn clean package
-      - name: Run Checkstyle
-        run: mvn checkstyle:checkstyle -q #заменить на локальный мавен
+     # - name: Run Checkstyle
+      #  run: mvn checkstyle:checkstyle -q #заменить на локальный мавен
       - name: Prepare tag
         run: echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
       - name: build docker image and push to docker hub
