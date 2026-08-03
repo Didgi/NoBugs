@@ -3,7 +3,7 @@
 set -e
 pwd
 ls
-source .**/Docker.env
+source infra/Docker.env
 
 ENV=COMMIT_HASH
 echo ">>> Получен хэш коммита: ${COMMIT_HASH}"
