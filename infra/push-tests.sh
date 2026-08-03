@@ -5,13 +5,10 @@ set -e
 echo ">>> Получен хэш коммита: $COMMIT_HASH"
 
 echo ">>> Авторизация в docker"
-echo ">>> Логин получен из секрета: $DOCKER_USERNAME"
-echo ">>> Токен получен из секрета: $DOCKER_TOKEN"
 echo "$DOCKER_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
 
 IMAGE_NAME=nbank-tests
-SHORT_COMMIT_HASH=$COMMIT_HASH::7
-DOCKER_IMAGE="${DOCKER_USERNAME}/${IMAGE_NAME}:${SHORT_COMMIT_HASH}"
+DOCKER_IMAGE="${DOCKER_USERNAME}/${IMAGE_NAME}:${$COMMIT_HASH::7}"
 
 echo ">>> Старт сборки докер образа"
 docker build -t ${DOCKER_IMAGE} .
