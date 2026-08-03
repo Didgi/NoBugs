@@ -1,9 +1,8 @@
 #!/bin/bash
 
 set -e
-pwd
-ls
-source infra/Docker.env
+cd infra/
+source .Docker.env
 
 ENV=COMMIT_HASH
 echo ">>> Получен хэш коммита: ${COMMIT_HASH}"
