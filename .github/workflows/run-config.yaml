@@ -1,0 +1,34 @@
+name: my test workflow
+on:
+  push:
+    paths:
+      - src/**
+jobs:
+  run-tests:
+    name: basic job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      #- name: build project
+      #  run: mvn clean package
+      - name: Run Checkstyle
+        run: mvn checkstyle:checkstyle #заменить на локальный мавен
+      - name: Prepare tag
+        run: echo "SHORT_COMMIT_HASH=${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - name: build docker image and push to docker hub
+        run: infra/push-tests.sh ${ env.SHORT_SHA }
+      #- name: Run tests
+      #  run: mvn clean test
