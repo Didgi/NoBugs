@@ -8,7 +8,7 @@ echo ">>> Авторизация в docker"
 echo "$DOCKER_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
 
 IMAGE_NAME=nbank-tests
-DOCKER_IMAGE="${DOCKER_USERNAME}/${IMAGE_NAME}:${$COMMIT_HASH::7}"
+DOCKER_IMAGE="${DOCKER_USERNAME}/${IMAGE_NAME}:${COMMIT_HASH::7}"
 
 echo ">>> Старт сборки докер образа"
 docker build -t ${DOCKER_IMAGE} .
