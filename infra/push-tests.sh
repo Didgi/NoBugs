@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-echo pwd
+pwd
 source /infra/Docker.env
 
 ENV=COMMIT_HASH

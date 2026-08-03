@@ -25,7 +25,7 @@ jobs:
       #- name: build project
       #  run: mvn clean package
       - name: Run Checkstyle
-        run: mvn checkstyle:checkstyle #заменить на локальный мавен
+        run: mvn checkstyle:checkstyle -q #заменить на локальный мавен
       - name: Prepare tag
         run: echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
       - name: build docker image and push to docker hub
