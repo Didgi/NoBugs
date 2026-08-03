@@ -2,18 +2,13 @@
 
 set -e
 
-cd infra/
-ls -l
-source .Docker.env
-
-ENV=COMMIT_HASH
-echo ">>> Получен хэш коммита: ${COMMIT_HASH}"
+echo ">>> Получен хэш коммита: $COMMIT_HASH"
 
 echo ">>> Авторизация в docker"
-echo "${DOCKER_TOKEN}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+echo "$DOCKER_TOKEN" | docker login -u $DOCKER_USERNAME --password-stdin
 
 IMAGE_NAME=nbank-tests
-SHORT_COMMIT_HASH=${COMMIT_HASH::7}
+SHORT_COMMIT_HASH=$COMMIT_HASH::7
 DOCKER_IMAGE="${DOCKER_USERNAME}/${IMAGE_NAME}:${SHORT_COMMIT_HASH}"
 
 echo ">>> Старт сборки докер образа"

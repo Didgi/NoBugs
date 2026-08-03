@@ -28,6 +28,10 @@ jobs:
       - name: Prepare tag
         run: echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
       - name: build docker image and push to docker hub
-        run: infra/push-tests.sh ${{ env.COMMIT_HASH }}
+        run: infra/push-tests.sh
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          COMMIT_HASH: ${{ env.COMMIT_HASH }}
       #- name: Run tests
       #  run: mvn clean test
