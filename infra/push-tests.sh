@@ -1,7 +1,9 @@
 #!/bin/bash
 
 set -e
+
 cd infra/
+ls -l
 source .Docker.env
 
 ENV=COMMIT_HASH
