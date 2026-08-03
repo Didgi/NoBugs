@@ -6,6 +6,7 @@ jobs:
   run-tests:
     name: basic job
     runs-on: ubuntu-latest
+    environment: Test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
