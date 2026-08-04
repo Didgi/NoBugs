@@ -2,13 +2,13 @@
 
 echo ">>> Остановка Docker Compose"
 
-COMPOSE_FILE=./docker-compose.yml
+COMPOSE_FILE=infra/docker-compose.yml
 
 docker compose -f "$COMPOSE_FILE" down -v
 
 echo ">>> Docker pull всех образов браузеров"
 
-json_file=".infra/config/browsers.json"
+json_file="infra/config/browsers.json"
 if ! command -v jq &> /dev/null; then
     echo ">>> ❌ jq is not installed. Please install jq and try again."
     exit 1
