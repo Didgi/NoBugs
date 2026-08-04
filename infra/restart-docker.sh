@@ -2,7 +2,7 @@
 
 echo ">>> Остановка Docker Compose"
 
-COMPOSE_FILE=./infra/docker-compose.yml
+COMPOSE_FILE=./docker-compose.yml
 
 docker compose -f "$COMPOSE_FILE" down -v
 

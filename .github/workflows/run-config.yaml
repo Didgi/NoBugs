@@ -22,6 +22,8 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
+      - name: prepare app environment
+        run: infra/restart-docker.sh
       - name: build project
         run: ./mvnw clean package -e
       - name: Run Checkstyle
