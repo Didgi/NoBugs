@@ -24,7 +24,6 @@ services:
     - nbank-network
    depends_on:
     - backend
-
   postgres:
     image: postgres:15-alpine
     ports:
