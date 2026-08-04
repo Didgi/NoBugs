@@ -1,6 +1,6 @@
 services:
   backend:
-    image: nobugsme/nbank:with_fraud_check_with_approve
+    image: nobugsme/nbank:preprod_version
     container_name: backend
     ports:
       - "4111:4111"

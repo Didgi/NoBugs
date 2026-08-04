@@ -22,3 +22,6 @@ done
 echo ">>> Запуск Docker Compose"
 
 docker compose -f "$COMPOSE_FILE" up -d
+
+echo ">>> Запущенные контейнеры"
+docker compose -f "$COMPOSE_FILE" ps
