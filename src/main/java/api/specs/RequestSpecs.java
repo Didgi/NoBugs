@@ -32,7 +32,6 @@ public class RequestSpecs {
     }
 
     public static RequestSpecBuilder basicRequestSpec() {
-        System.out.println("Базовый урл: " + BASE_URI);
         return new RequestSpecBuilder().setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
                 .addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter(), new AllureRestAssured(),
