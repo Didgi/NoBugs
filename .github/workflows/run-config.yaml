@@ -22,25 +22,18 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Prepare app environment
+      - name: Prepare docker app environment
         run: infra/restart-docker.sh
-      - name: Show containers
-        run: docker compose -f infra/docker-compose.yml ps
-      - name: Backend logs
-        run: docker compose -f infra/docker-compose.yml logs backend
-      - name: Postgres logs
-        run: docker compose -f infra/docker-compose.yml logs postgres
-      - name: build project
+      - name: Build project
         run: ./mvnw clean package -e
       - name: Run Checkstyle
         run: ./mvnw checkstyle:checkstyle -q
-      - name: Prepare tag
-        run: echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
-      - name: build docker image and push to docker hub
+#      - name: Prepare tag
+#        run: echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
+      - name: Build docker image and push to the docker hub
         run: infra/push-tests.sh
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          COMMIT_HASH: ${{ env.COMMIT_HASH }}
-      #- name: Run tests
-      #  run: mvn clean test
+#          COMMIT_HASH: ${{ env.COMMIT_HASH }}
+          COMMIT_HASH: ${{ github.sha }}
