@@ -9,6 +9,7 @@ import api.models.TransferFraudCheckResponse;
 import api.requests.steps.db_steps.DBSteps;
 import api.requests.steps.user_steps.UserSteps;
 import api.utils.RandomData;
+import common.annotations.Bug;
 import common.annotations.FraudCheckMock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
 
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.APPROVED
     )
@@ -83,6 +85,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.BLOCKED
     )
@@ -128,6 +131,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.REVIEW_REQUIRED
     )
@@ -187,6 +191,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             requiresManualReview = true
     )
@@ -246,6 +251,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.VERIFICATION_REQUIRED
     )
@@ -305,6 +311,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             additionalVerificationRequired = true
     )
@@ -365,6 +372,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             badRequest = true
     )
@@ -423,6 +431,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             internalServerError = true
     )
@@ -481,6 +490,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
+    @Bug(value = true)
     @FraudCheckMock(
             timeout = true,
             decision = TransactionFraudCheckDecision.APPROVED
