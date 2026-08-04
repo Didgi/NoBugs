@@ -9,9 +9,9 @@ jobs:
     environment: Test
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -30,12 +30,6 @@ jobs:
         run: docker compose -f infra/docker-compose.yml logs backend
       - name: Postgres logs
         run: docker compose -f infra/docker-compose.yml logs postgres
-#      - name: Wait backend localhost
-#        run: |
-#          curl -v http://backend:4111/actuator/health
-#      - name: Wait frontend localhost
-#        run: |
-#          curl -v http://frontend:3000/actuator/health
       - name: build project
         run: ./mvnw clean package -e
       - name: Run Checkstyle
