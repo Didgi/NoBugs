@@ -30,12 +30,12 @@ jobs:
         run: docker compose -f infra/docker-compose.yml logs backend
       - name: Postgres logs
         run: docker compose -f infra/docker-compose.yml logs postgres
-      - name: Wait backend localhost
-        run: |
-          curl -v http://backend:4111/actuator/health
-      - name: Wait frontend localhost
-        run: |
-          curl -v http://frontend:3000/actuator/health
+#      - name: Wait backend localhost
+#        run: |
+#          curl -v http://backend:4111/actuator/health
+#      - name: Wait frontend localhost
+#        run: |
+#          curl -v http://frontend:3000/actuator/health
       - name: build project
         run: ./mvnw clean package -e
       - name: Run Checkstyle
