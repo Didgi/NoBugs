@@ -22,8 +22,17 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: prepare app environment
+      - name: Prepare app environment
         run: infra/restart-docker.sh
+      - name: Show containers
+        run: docker compose -f infra/docker-compose.yml ps
+      - name: Backend logs
+        run: docker compose -f infra/docker-compose.yml logs backend
+      - name: Postgres logs
+        run: docker compose -f infra/docker-compose.yml logs postgres
+      - name: Wait backend localhost
+        run: |
+          curl -v http://localhost:4111/actuator/health
       - name: build project
         run: ./mvnw clean package -e
       - name: Run Checkstyle
