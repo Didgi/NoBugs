@@ -26,6 +26,15 @@ jobs:
         run: infra/restart-docker.sh
       - name: Build project
         run: ./mvnw clean package -e
+      - name: Generate Surefire report
+        if: always()
+        run: ./mvnw surefire-report:report
+      - name: Upload Surefire report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-report
+          path: target/site
       - name: Run Checkstyle
         run: ./mvnw checkstyle:checkstyle -q
 #      - name: Prepare tag
