@@ -1,8 +1,7 @@
 name: my test workflow
-on:
-  push:
-    paths:
-      - src/**
+on: [push]
+   # paths:
+    #  - src/**
 jobs:
   run-tests:
     name: basic job
@@ -24,7 +23,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: build project
-        run: ./mvnw clean package
+        run: ./mvnw clean package -e
       - name: Run Checkstyle
         run: ./mvnw checkstyle:checkstyle -q
       - name: Prepare tag
