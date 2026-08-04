@@ -1,6 +1,6 @@
 package common.extensions;
 
-import WM.Mapper.*;
+import WM.mapper.*;
 import WM.client.WireMockClient;
 import api.config.Config;
 import api.config.TransactionFraudCheckDecision;

@@ -1,4 +1,4 @@
-package WM.Mapper;
+package WM.mapper;
 
 import WM.models.FraudResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
