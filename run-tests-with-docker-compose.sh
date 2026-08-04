@@ -24,7 +24,6 @@ docker run --rm \
   -e db_username=postgres \
   -e db_password=postgres \
 ${DOCKER_IMAGE}
-#docker.io/akokarev1991/nbank-tests:4
 
 echo ">>> Тесты завершены"
 echo "Лог файл: $TEST_OUTPUT_DIR/logs/run.log"
