@@ -360,7 +360,8 @@ public class TransferPage extends BasePage<TransferPage> {
     }
 
     public String expectedSuccessfulTransferModalMessageInRepeatModal(double money, int accountIdFrom, int accountIdTo) {
-        return "✅ Transfer of $" + money + " successful from Account " + accountIdFrom + " to " + accountIdTo + "!";
+        final String moneyAccurate = BigDecimal.valueOf(money).stripTrailingZeros().toPlainString();
+        return "✅ Transfer of $" + moneyAccurate + " successful from Account " + accountIdFrom + " to " + accountIdTo + "!";
     }
 
     public TransferPage checkSelectedAccountInListRepeatModal(String userToken, String userAccountNumber) {
