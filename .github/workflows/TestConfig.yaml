@@ -1,10 +1,11 @@
 name: my test workflow
-on: [push]
-   # paths:
-    #  - src/**
+on:
+  push:
+    paths:
+      - src/**
 jobs:
   run-tests:
-    name: basic job
+    name: basic test job
     runs-on: ubuntu-latest
     environment: Test
     steps:
@@ -22,29 +23,15 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Prepare docker app environment
-        run: infra/restart-docker.sh
+      - name: Prepare docker apps environment
+        run: infra/restart-docker-images.sh
       - name: Build project
-        run: ./mvnw clean package -e
-      - name: Generate Surefire report
-        if: always()
-        run: ./mvnw surefire-report:report -DskipTests
-      - name: Upload Surefire report
-        if: always()
-        uses: actions/upload-artifact@v4
-      - name: Download report
-        uses: actions/download-artifact@v4
-        with:
-          name: surefire-report
-          path: target/site
+        run: ./mvnw clean package
       - name: Run Checkstyle
         run: ./mvnw checkstyle:checkstyle -q
-#      - name: Prepare tag
-#        run: echo "COMMIT_HASH=${{ github.sha }}" >> $GITHUB_ENV
       - name: Build docker image and push to the docker hub
-        run: infra/push-tests.sh
+        run: infra/push-tests-in-repo.sh
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-#          COMMIT_HASH: ${{ env.COMMIT_HASH }}
           COMMIT_HASH: ${{ github.sha }}
