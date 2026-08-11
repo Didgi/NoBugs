@@ -1,0 +1,46 @@
+name: my test workflow
+on:
+  push:
+    paths:
+      - src/**
+jobs:
+  run-tests:
+    name: basic test job
+    runs-on: ubuntu-latest
+    environment: Test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Prepare docker apps environment
+        run: infra/restart-docker-images.sh
+      - name: Build project
+        run: ./mvnw clean package
+      - name: Generate Allure report
+        if: always()
+        run: ./mvnw surefire-report:report
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/allure-results
+      - name: Run Checkstyle
+        run: ./mvnw checkstyle:checkstyle -q
+      - name: Build docker image and push to the docker hub
+        run: infra/push-tests-in-repo.sh
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          COMMIT_HASH: ${{ github.sha }}

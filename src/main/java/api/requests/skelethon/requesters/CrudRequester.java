@@ -4,6 +4,8 @@ import api.models.BaseModel;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.HttpBaseRequest;
 import api.requests.skelethon.interfaces.CrudRequestsInterface;
+import common.StepLogger;
+import io.qameta.allure.Step;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
@@ -16,66 +18,84 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
     }
 
     @Override
+    @Step("POST запрос")
     public ValidatableResponse POST(BaseModel baseModel) {
         if (baseModel != null && !endpointRequests.getRequestModel().isInstance(baseModel)) {
             throw new RuntimeException("Ожидаемая и переданные модели различаются. " +
                     "Ожидалась модель: " + endpointRequests.getRequestModel().getSimpleName() +
                     ", но передана модель: " + baseModel.toString());
         }
-        var body = baseModel != null ? baseModel : "";
-        return given()
-                .spec(requestSpecification)
-                .body(body)
-                .post(endpointRequests.getPath())
-                .then()
-                .spec(responseSpecification);
+        return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
+            var body = baseModel != null ? baseModel : "";
+            return given()
+                    .spec(requestSpecification)
+                    .body(body)
+                    .post(endpointRequests.getPath())
+                    .then()
+                    .spec(responseSpecification);
+        });
     }
 
+    @Step("POST запрос с transactionId: {transactionId}")
     public ValidatableResponse POST(int transactionId) {
-        return given()
-                .spec(requestSpecification)
-                .pathParam("transactionId", transactionId)
-                .post(endpointRequests.getPath())
-                .then()
-                .spec(responseSpecification);
+        return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
+            return given()
+                    .spec(requestSpecification)
+                    .pathParam("transactionId", transactionId)
+                    .post(endpointRequests.getPath())
+                    .then()
+                    .spec(responseSpecification);
+        });
     }
 
     @Override
+    @Step("GET запрос")
     public ValidatableResponse GET() {
-        return given().spec(requestSpecification)
-                .get(endpointRequests.getPath())
-                .then()
-                .spec(responseSpecification);
+        return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
+            return given().spec(requestSpecification)
+                    .get(endpointRequests.getPath())
+                    .then()
+                    .spec(responseSpecification);
+        });
     }
 
+    @Step("GET запрос по accountId: {accountId}")
     public ValidatableResponse GET(int accountId) {
-        return given().spec(requestSpecification)
-                .pathParam("accountId", accountId)
-                .get(endpointRequests.getPath())
-                .then()
-                .spec(responseSpecification);
+        return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
+            return given().spec(requestSpecification)
+                    .pathParam("accountId", accountId)
+                    .get(endpointRequests.getPath())
+                    .then()
+                    .spec(responseSpecification);
+        });
     }
 
     @Override
+    @Step("PUT запрос")
     public ValidatableResponse PUT(BaseModel baseModel) {
         if (baseModel != null && !endpointRequests.getRequestModel().isInstance(baseModel)) {
             throw new RuntimeException("Ожидаемая и переданные модели различаются. " +
                     "Ожидалась модель: " + endpointRequests.getRequestModel().getSimpleName() +
                     ", но передана модель: " + baseModel.toString());
         }
-        var body = baseModel != null ? baseModel : "";
-        return given().spec(requestSpecification)
-                .body(body)
-                .put(endpointRequests.getPath())
-                .then()
-                .spec(responseSpecification);
+        return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
+            var body = baseModel != null ? baseModel : "";
+            return given().spec(requestSpecification)
+                    .body(body)
+                    .put(endpointRequests.getPath())
+                    .then()
+                    .spec(responseSpecification);
+        });
     }
 
     @Override
+    @Step("DELETE запрос по id: {id}")
     public ValidatableResponse DELETE(int id) {
-        return given().spec(requestSpecification)
-                .delete(endpointRequests.getPath() + id)
-                .then()
-                .spec(responseSpecification);
+        return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
+            return given().spec(requestSpecification)
+                    .delete(endpointRequests.getPath() + id)
+                    .then()
+                    .spec(responseSpecification);
+        });
     }
 }

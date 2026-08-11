@@ -4,7 +4,10 @@ import api.config.Config;
 import api_tests.BaseTestSenior;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
+import com.codeborne.selenide.logevents.SelenideLogger;
 import common.extensions.*;
+import io.qameta.allure.Step;
+import io.qameta.allure.selenide.AllureSelenide;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +40,9 @@ public class UIBaseTestSenior extends BaseTestSenior {
         );
 
         Configuration.headless = Boolean.parseBoolean(Config.getProperty("headless_mode"));
+        SelenideLogger.addListener("AllureSelenide", new AllureSelenide()
+                .screenshots(true)
+                .savePageSource(true));
     }
 
     protected MainPage mainPage;
@@ -53,6 +59,7 @@ public class UIBaseTestSenior extends BaseTestSenior {
     }
 
     @AfterEach
+    @Step("Завершаем тесты. Закрываем WebDriver")
     public void tearDownUiTests() {
         Selenide.closeWebDriver();
     }

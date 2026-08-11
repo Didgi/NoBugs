@@ -4,7 +4,6 @@ import api.dao.jdbc.CustomersDao;
 import api.requests.steps.db_steps.DBSteps;
 import api.requests.steps.user_steps.UserSteps;
 import api.utils.RandomData;
-import com.codeborne.selenide.Selenide;
 import common.SessionStorage;
 import common.annotations.AdminSession;
 import common.annotations.BrowserAnnotation;
@@ -44,16 +43,14 @@ public class ChangeUserNameTests extends UIBaseTestSenior {
                 .checkInputNameFieldDefaultValue()
                 .inputName(expectedUserName)
                 .clickSaveButton()
-                .checkMessageFromModalPageAndAccept(UPDATE_SUCCESSFULLY.getValue());
+                .checkMessageFromModalPageAndAccept(UPDATE_SUCCESSFULLY.getValue())
+                .refreshPage()
+                .checkEditPageOpened()
+                .checkUsernameMainPageTopRight(expectedUserName);
 
 //        Проверяем отображение изменённого имени пользователя справа сверху страницы
 //        Баг. Без рефреша отображается дефолтное значение
 //        userProfilePage.checkUsernameMainPageTopRight(expectedUserName);
-
-        Selenide.refresh();
-        userProfilePage
-                .checkEditPageOpened()
-                .checkUsernameMainPageTopRight(expectedUserName);
 
         String expectedUpdatedGreeding = mainPage.expectedGreeding(expectedUserName);
 
@@ -88,13 +85,13 @@ public class ChangeUserNameTests extends UIBaseTestSenior {
                 .checkInputNameFieldDefaultValue()
                 .inputName(expectedUserName)
                 .clickSaveButton()
-                .checkMessageFromModalPageAndAccept(UPDATE_ERROR_NAME_INVALID.getValue());
+                .checkMessageFromModalPageAndAccept(UPDATE_ERROR_NAME_INVALID.getValue())
+                        .refreshPage();
 
 //        Проверяем отображение изменённого имени пользователя справа сверху страницы
 //        Баг. Без рефреша отображается дефолтное значение
 //        userProfilePage.checkUsernameMainPageTopRight(expectedUserName);
 
-        Selenide.refresh();
         String expectedUpdatedGreeding = mainPage.expectedGreeding(DEFAULT_USER_NAME);
         userProfilePage
                 .checkUsernameMainPageTopRight(DEFAULT_USER_NAME)

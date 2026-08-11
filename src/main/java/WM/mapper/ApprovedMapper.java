@@ -1,19 +1,17 @@
-package WM.Mapper;
+package WM.mapper;
 
 import WM.models.FraudResponse;
-import api.config.TransactionFraudCheckDecision;
-import api.config.TransactionFraudCheckReason;
 import common.annotations.FraudCheckMock;
 
-public class ReviewRequiredMapper implements ScenariosMapper {
+public class ApprovedMapper implements ScenariosMapper {
     @Override
     public FraudResponse map(FraudCheckMock config) throws RuntimeException {
         return FraudResponse.builder()
                 .status(config.status())
-                .decision(TransactionFraudCheckDecision.REVIEW_REQUIRED)
+                .decision(config.decision())
                 .requiresManualReview(config.requiresManualReview())
                 .additionalVerificationRequired(config.additionalVerificationRequired())
-                .reason(TransactionFraudCheckReason.TRANSFER_REQUIRES_MANUAL_REVIEW)
+                .reason(config.reason())
                 .riskScore(config.riskScore())
                 .build();
     }

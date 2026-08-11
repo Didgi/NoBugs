@@ -3,6 +3,7 @@ package ui.pages;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -29,11 +30,13 @@ public class MainPage extends BasePage<MainPage> {
         return UiPath.DASHBOARD;
     }
 
+    @Step("Проверяем, что открыта основная страница")
     public MainPage checkMainPageOpened(){
         mainTitle.shouldBe(visible);
         return this;
     }
 
+    @Step("Проверяем, что приветственное слово на главной странице совпадает с {expectedText}")
     public MainPage checkGreedingText(String expectedText){
         welcomeTitle.shouldBe(visible).shouldHave(Condition.text(expectedText));
         assertThat(welcomeTitle.text()).isEqualTo(expectedText);
