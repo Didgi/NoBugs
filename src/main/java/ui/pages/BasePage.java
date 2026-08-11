@@ -5,7 +5,9 @@ import api.models.UserAccountResponse;
 import api.requests.steps.db_steps.DBSteps;
 import api.requests.steps.user_steps.UserSteps;
 import com.codeborne.selenide.*;
+import common.StepLogger;
 import common.retry.RetryUtils;
+import io.qameta.allure.Step;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Assertions;
@@ -41,14 +43,17 @@ public abstract class BasePage<T extends BasePage> {
 
     public abstract String url();
 
+
     public T open() {
-        return Selenide.open(url(), (Class<T>) this.getClass());
+        return StepLogger.log("Открываем сайт", () -> Selenide.open(url(), (Class<T>) this.getClass()));
     }
 
     public <T extends BasePage> T getPage(Class<T> classPage) {
-        return Selenide.page(classPage);
+
+        return StepLogger.log("Переходим на страницу", () -> Selenide.page(classPage));
     }
 
+    @Step("Сохраняем токен пользователя в storage")
     public static void putTokenIntoStorage(String authToken) {
         Selenide.open("/");
         executeJavaScript(
@@ -58,24 +63,28 @@ public abstract class BasePage<T extends BasePage> {
         );
     }
 
+    @Step("Вводим значение количества денег")
     public T inputAmountValue(double value) {
         amountField.shouldBe(Condition.visible).click();
         amountField.setValue(String.valueOf(value));
         return (T) this;
     }
 
+    @Step("Проверяем введённое значение количества денег")
     public T checkAmountDefaultValue() {
         amountField.shouldBe(Condition.visible);
         amountField.shouldHave(Condition.exactValue(""));
         return (T) this;
     }
 
+    @Step("Проверяем, что введённое ранее значение количества денег не изменилось")
     public T checkAmountValueDoesntChange(double value) {
         amountField.shouldBe(Condition.visible);
         amountField.shouldHave(Condition.exactValue(String.valueOf(value)));
         return (T) this;
     }
 
+    @Step("Проверяем сообщение об успешности операции в модальном окне: {messageText}")
     public T checkMessageFromModalPageAndAccept(String messageText) {
         Alert alert = RetryUtils.retry(
                 () -> {
@@ -97,6 +106,7 @@ public abstract class BasePage<T extends BasePage> {
         return "✅ Successfully deposited $" + money + " to account " + ACCOUNT_NUMBER_PREFIX.getValue() + userAccount + "!";
     }
 
+    @Step("Получаем сообщение об успешном выполненном депозите для дальнейшего сравнения с реальным результатом")
     public String expectedSuccessfullyDepositModalMessage(double money, int userAccount) {
         final AccountsEntity accountByAccountIdJPA = DBSteps.getAccountByAccountIdJPA(userAccount);
         return "✅ Successfully deposited $" + money + " to account " + accountByAccountIdJPA.getAccountNumber() + "!";
@@ -109,6 +119,7 @@ public abstract class BasePage<T extends BasePage> {
                 " (Balance: $" + String.format(Locale.US, "%.2f", userBalance) + ")";
     }
 
+    @Step("Получаем информацию об аккаунте: {userAccountNumber}")
     public static String getAccountInfoList(String userToken, String userAccountNumber) {
         final List<UserAccountResponse> userAccounts = UserSteps.getUserAccounts(userToken);
         final UserAccountResponse userAccountResponse = userAccounts
@@ -129,6 +140,7 @@ public abstract class BasePage<T extends BasePage> {
         return (T) this;
     }
 
+    @Step("Проверяем, что выбран {userAccountNumber} аккаунт в списке всех аккаунтов")
     public T checkSelectedAccountInList(String userToken, String userAccountNumber) {
         final String actualAccountInfoInList = getAccountSelector().getSelectedOptionText();
         final String expectedAccountInfoInList = getAccountInfoList(userToken, userAccountNumber);
@@ -136,45 +148,58 @@ public abstract class BasePage<T extends BasePage> {
         return (T) this;
     }
 
+    @Step("Проверяем дефолтное значение в списке всех аккаунтов")
     public T checkDefaultValueInAccountList() {
         getAccountSelector().options().findBy(Condition.exactText(DEFAULT_TEXT_IN_ACCOUNT_LIST_SELECTOR))
                 .shouldBe(Condition.visible);
         return (T) this;
     }
 
+    @Step("Проверяем количество аккаунтов в списке всех аккаунтов")
     public T checkAccountSize(int expectedAmount) {
         getAccountSelector().options().shouldHave(size(expectedAmount));
         return (T) this;
     }
 
+    @Step("Выделяем аккаунт {account}")
     public T selectAccount(int account) {
         getAccountSelector().click();
         getAccountSelector().selectOptionByValue(String.valueOf(account));
         return (T) this;
     }
 
+    @Step("Выделяем аккаунт {account}")
     public T selectAccount(String account) {
         getAccountSelector().click();
         getAccountSelector().selectOptionContainingText(account);
         return (T) this;
     }
 
+    @Step("Получаем информацию о выбранном аккаунте")
+    public String getActualAccountInfoInListTransfer(){
+        return getAccountSelector().getSelectedOptionText();
+    }
+
+    @Step("Проверяем дефолтное значение в списке всех аккаунтов")
     public T selectDefaultValueInAccountList() {
         getAccountSelector().selectOption(DEFAULT_TEXT_IN_ACCOUNT_LIST_SELECTOR);
         return (T) this;
     }
 
+    @Step("Проверяем, что ранее выбранный аккаунт {expectedAccountInfoInList} в списке не сбросился")
     public T checkSelectedAccountDoesntChange(String expectedAccountInfoInList) {
         final String actualAccountInfoInListAfterTransfer = getAccountSelector().getSelectedOptionText();
         Assertions.assertEquals(expectedAccountInfoInList, actualAccountInfoInListAfterTransfer);
         return (T) this;
     }
 
+    @Step("Проверяем username пользователя {expectedName} на странице справа сверху")
     public T checkUsernameMainPageTopRight(String expectedName) {
         assertThat(userInfo.getText().toLowerCase()).isEqualTo(expectedName);
         return (T) this;
     }
 
+    @Step("Нажимаем на кнопку Home")
     public T clickHomeButton() {
         homeButton.click();
         return (T) this;
@@ -183,5 +208,11 @@ public abstract class BasePage<T extends BasePage> {
     public <T extends BaseElement> List<T> generateElementList(ElementsCollection elements,
                                                                Function<SelenideElement, T> constructor) {
         return elements.stream().map(constructor).toList();
+    }
+
+    @Step("Обновляем страницу")
+    public T refreshPage() {
+        Selenide.refresh();
+        return (T) this;
     }
 }

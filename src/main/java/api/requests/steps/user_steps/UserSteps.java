@@ -13,6 +13,7 @@ import api.requests.steps.db_steps.DBSteps;
 import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import common.SessionStorage;
+import io.qameta.allure.Step;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.specification.ResponseSpecification;
 import lombok.Getter;
@@ -41,17 +42,21 @@ public class UserSteps {
         softly = softAssertions;
     }
 
+    @Step("Создаём пользователю аккаунт")
     public static int createUserAccount(String userToken) {
         final CreateUserAccountResponse userAccountResponse =
                 new ValidatableCrudRequester<CreateUserAccountResponse>(RequestSpecs.withToken(userToken),
                         EndpointRequests.CREATE_USER_ACCOUNT,
                         ResponseSpecs.entityWasCreated()).POST(null);
+
         final List<UserAccountResponse> userAccounts = getUserAccounts(userToken);
         SessionStorage.replaceUserInfoInStorage(userToken, null, userAccounts);
         return userAccountResponse.getId();
 
+
     }
 
+    @Step("Получаем все аккаунты пользователя")
     public static List<UserAccountResponse> getUserAccounts(String userToken) {
         return new CrudRequester(RequestSpecs.withToken(userToken), EndpointRequests.GET_USER_ACCOUNTS,
                 ResponseSpecs.requestReturnsOk())
@@ -69,12 +74,12 @@ public class UserSteps {
 
     }
 
+    @Step("Получаем баланс пользователя по аккаунту: {accountId}")
     public static double getUserBalance(String userToken, int accountId) {
         final Optional<UserAccountResponse> foundAccount = getUserAccounts(userToken)
                 .stream()
                 .filter(accounts ->
                         accounts.getId() == accountId).findFirst();
-
         final Double raw = foundAccount.map(UserAccountResponse::getBalance).orElse(DEFAULT_ZERO_BALANCE);
         return BigDecimal.valueOf(raw).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
@@ -83,7 +88,6 @@ public class UserSteps {
         final Optional<UserAccountResponse> foundAccount = getUserAccounts(userToken).stream()
                 .filter(accounts -> accounts.getId() == accountId).findFirst();
         return null;
-
     }
 
     public static UserTransactionsResponse getUserTransactions(String userToken, int accountId, Operations operation) {
@@ -97,6 +101,7 @@ public class UserSteps {
                 userTransactionsResponse.getType().equals(operation)).findFirst().orElse(null);
     }
 
+    @Step("Получаем список транзакций аккаунта: {accountId}")
     public static List<UserTransactionsResponse> getUserTransactions(String userToken, int accountId) {
         return new CrudRequester(RequestSpecs.withToken(userToken),
                 EndpointRequests.GET_USER_TRANSACTIONS,
@@ -105,7 +110,8 @@ public class UserSteps {
                 });
     }
 
-
+    @Step("Проверяем детали выполненной транзакции с аккаунта {fromAccountId} на аккаунт " +
+            " {toAccountId} с типом операции {operation} через api")
     public static void checkUserTransactions(String userToken, int fromAccountId, int toAccountId,
                                              ZonedDateTime nowTime, Operations operation, double moneyToTransfer) {
         final List<UserTransactionsResponse> userFirstTransactions = getUserTransactions(userToken, fromAccountId);
@@ -122,6 +128,8 @@ public class UserSteps {
         softly.assertThat(userFirstTransactionsResponse.getRelatedAccountId()).isEqualTo(toAccountId);
     }
 
+    @Step("Проверяем детали выполненной транзакции с аккаунта {fromAccountId} на аккаунт " +
+            " {toAccountId} с типом операции {operation} с проверкой на мошенничество через api")
     public static void checkUserTransactions(String userToken, int fromAccountId, int toAccountId,
                                              ZonedDateTime nowTime, Operations operation, double moneyToTransfer,
                                              TransactionStatus status, boolean fraudCheckRequired) {
@@ -141,6 +149,9 @@ public class UserSteps {
         softly.assertThat(userFirstTransactionsResponse.isFraudCheckRequired()).isEqualTo(fraudCheckRequired);
     }
 
+
+    @Step("Проверяем детали выполненной транзакции с аккаунта {fromAccountId} на аккаунт " +
+            " {toAccountId} с типом операции {operation} через БД")
     public static void checkUserTransactionsDb(int fromAccountId, int toAccountId,
                                                ZonedDateTime nowTime, String operation, double moneyToTransfer) throws SQLException {
 
@@ -154,9 +165,10 @@ public class UserSteps {
                 .isBetween(nowTime.minusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime(),
                         nowTime.plusSeconds(PLUS_MINUS_SECONDS).toLocalDateTime());
         softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(toAccountId);
-
     }
 
+    @Step("Проверяем детали выполненной транзакции с аккаунта {fromAccountId} на аккаунт " +
+            " {toAccountId} с типом операции {operation} с проверкой на мошенничество через БД")
     public static void checkUserTransactionsDb(int fromAccountId, int toAccountId,
                                                ZonedDateTime nowTime, String operation, double moneyToTransfer,
                                                TransactionStatus status, boolean fraudCheckRequired) throws SQLException {
@@ -173,20 +185,19 @@ public class UserSteps {
         softly.assertThat(transactionsDao.getRelatedAccountId()).isEqualTo(toAccountId);
         softly.assertThat(transactionsDao.getStatus()).isEqualTo(status);
         softly.assertThat(transactionsDao.isFraudCheckRequired()).isEqualTo(fraudCheckRequired);
-
     }
 
+    @Step("Проверяем через api, что по аккаунту: {accountId} отсутствует транзакция с типом {operation}")
     public static void checkNegativeUserTransactions(String userToken, int accountId, Operations operation) {
         final List<UserTransactionsResponse> userTransactions = getUserTransactions(userToken, accountId);
-
         userTransactions.stream().max(Comparator.comparingInt(UserTransactionsResponse::getId))
                 .ifPresent(userTransactionsResponse -> {
                     softly.assertThat(userTransactionsResponse.getType()).isNotEqualTo(operation);
                 });
     }
 
+    @Step("Проверяем через БД, что по аккаунту: {accountId} отсутствует транзакция с типом {operation}")
     public static void checkNegativeUserTransactionsDb(int accountId, Operations operation) throws SQLException {
-
         DBSteps.getTransactionInfoListByAccountIdJDBC(accountId)
                 .stream()
                 .max(Comparator.comparing(TransactionsDao::getId))
@@ -195,6 +206,7 @@ public class UserSteps {
                 });
     }
 
+    @Step("Пополняем аккаунт {accountId} на сумму {money} с проверкой деталей ответа")
     public static void depositMoney(String userToken, int accountId, double money) {
         DepositRequest depositRequest = new DepositRequest(accountId, money);
 
@@ -209,13 +221,14 @@ public class UserSteps {
         softly.assertThat(userAccountResponse.getDepositAmount()).isEqualTo(depositRequest.getAmount());
     }
 
+    @Step("Пополняем аккаунт {accountId} на сумму {money} без проверки деталей ответа")
     public static void depositMoneyWOCheckResponse(String userToken, int accountId, double money) {
         DepositRequest depositRequest = new DepositRequest(accountId, money);
-
         new ValidatableCrudRequester<DepositResponse>(RequestSpecs.withToken(userToken), EndpointRequests.DEPOSIT_MONEY,
                 ResponseSpecs.requestReturnsOk()).POST(depositRequest);
     }
 
+    @Step("Выполняем перевод денег с аккаунта {senderAccountId} на аккаунт {receiverAccountId} на сумму {money}")
     public static TransferResponse successfulTransferMoneyBetweenAccounts(String userToken, int senderAccountId,
                                                                           int receiverAccountId, double money) {
         final TransferRequest transferRequest = TransferRequest.builder().senderAccountId(senderAccountId)
@@ -228,10 +241,11 @@ public class UserSteps {
                         .POST(transferRequest);
 
         ModelAssertions.assertThatModels(transferRequest, transferResponse).match();
-
         return transferResponse;
     }
 
+    @Step("Выполняем перевод денег с аккаунта {senderAccountId} на аккаунт {receiverAccountId} на сумму {money} " +
+            "с проверкой на мошенничество")
     public static TransferFraudCheckResponse successfulTransferMoneyBetweenAccountsWithFraudCheck(String userToken, int senderAccountId,
                                                                                                   int receiverAccountId, double money) {
         final TransferRequest transferRequest = TransferRequest.builder().senderAccountId(senderAccountId)
@@ -248,6 +262,8 @@ public class UserSteps {
         return transferResponse;
     }
 
+    @Step("Проверяем ошибки при невалидном переводе с аккаунта {senderAccountId} на аккаунт " +
+            "{receiverAccountId} на сумму {money}")
     public static String failedTransferMoneyBetweenAccounts(String userToken, int senderAccountId,
                                                             int receiverAccountId, double money,
                                                             ResponseSpecification responseSpec) {
@@ -259,11 +275,13 @@ public class UserSteps {
                 , responseSpec).POST(transferRequest).getMessage();
     }
 
+    @Step("Получаем информацию о пользователе")
     public static UserProfileResponse getUserInfo(String userToken) {
         return new ValidatableCrudRequester<UserProfileResponse>(RequestSpecs.withToken(userToken),
                 EndpointRequests.GET_USER_INFO, ResponseSpecs.requestReturnsOk()).GET();
     }
 
+    @Step("Изменяем имя пользователя {changeUserRequest}")
     public static void successfulChangeUserName(ChangeUserRequest changeUserRequest, String userToken) {
         final ChangeUserResponse changeUserResponse =
                 new ValidatableCrudRequester<ChangeUserResponse>(RequestSpecs.withToken(userToken),
@@ -273,6 +291,7 @@ public class UserSteps {
         softly.assertThat(changeUserResponse.getName()).isEqualTo(changeUserRequest.getName());
     }
 
+    @Step("Подтверждаем операцию перевода для транзакции {transactionId} при проверке на мошенничество")
     public static void transferComplete(String userToken, int transactionId) {
         TransferCompleteResponse transferCompleteResponse = new CrudRequester(RequestSpecs.withToken(userToken), EndpointRequests.TRANSFER_MONEY_COMPLETE,
                 ResponseSpecs.requestReturnsOk())

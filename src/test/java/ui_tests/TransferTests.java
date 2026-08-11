@@ -1073,7 +1073,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkMessageFromModalPageAndAccept(TRANSFER_ERROR_UNEXISTED_ACCOUNT.getValue())
                 .checkTransferPageOpened();
 
-        final String actualAccountInfoInListAfterTransfer = transferPage.getAccountSelector().getSelectedOptionText();
+        final String actualAccountInfoInListAfterTransfer = transferPage.getActualAccountInfoInListTransfer();
         assertThat(actualAccountInfoInListAfterTransfer).isEqualTo(expectedAccountInfoInList);
 
         transferPage
@@ -1136,7 +1136,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkMessageFromModalPageAndAccept(TRANSFER_ERROR_UNEXISTED_ACCOUNT.getValue())
                 .checkTransferPageOpened();
 
-        final String actualAccountInfoInListAfterTransfer = transferPage.getAccountSelector().getSelectedOptionText();
+        final String actualAccountInfoInListAfterTransfer = transferPage.getActualAccountInfoInListTransfer();
         assertThat(actualAccountInfoInListAfterTransfer).isEqualTo(expectedAccountInfoInList);
 
         transferPage
@@ -1191,10 +1191,9 @@ public class TransferTests extends UIBaseTestSenior {
         UserSteps.depositMoney(firstUserToken, userFirstAccount, randomMoneyForFirstAccount);
         UserSteps.depositMoney(firstUserToken, userSecondAccount, randomMoneyForSecondAccount);
 
-        Selenide.refresh();
-
         expectedTransactions = 2;
         transferPage
+                .refreshPage()
                 .checkTransferPageOpened()
                 .openTransferAgainTab()
                 .checkTransferAgainPageOpened()
@@ -1221,10 +1220,9 @@ public class TransferTests extends UIBaseTestSenior {
                 transferPage.expectedSuccessfulTransferModalMessageOld(randomMoneyForFirstAccount, userSecondAccount);
         transferPage.checkMessageFromModalPageAndAccept(expectedAlertText);
 
-        Selenide.refresh();
-
         expectedTransactions = 4;
         transferPage
+                .refreshPage()
                 .openTransferAgainTab()
                 .checkTransferAgainPageOpened()
                 .checkTransactionsListSize(expectedTransactions);
@@ -1286,9 +1284,8 @@ public class TransferTests extends UIBaseTestSenior {
 
         expectedTransactions = 2;
 
-        Selenide.refresh();
-
         transferPage
+                .refreshPage()
                 .openNewTransferTab()
                 .checkTransferPageOpened()
                 .openTransferAgainTab()
@@ -1353,8 +1350,8 @@ public class TransferTests extends UIBaseTestSenior {
         transferPage.checkMessageFromModalPageAndAccept(expectedAlertText);
 
         expectedTransactions = 3;
-        Selenide.refresh();
         transferPage
+                .refreshPage()
                 .checkTransferPageOpened()
                 .openTransferAgainTab()
                 .checkTransferAgainPageOpened()
@@ -1379,8 +1376,8 @@ public class TransferTests extends UIBaseTestSenior {
         new ValidatableCrudRequester<CreateUserResponse>(RequestSpecs.withToken(firstUserToken), EndpointRequests.UPDATE_USER, ResponseSpecs.requestReturnsOk())
                 .PUT(changeUserRequest);
 
-        Selenide.refresh();
         transferPage
+                .refreshPage()
                 .checkTransferPageOpened()
                 .openTransferAgainTab()
                 .inputValueInSearchField(changeUserRequest.getName())
@@ -1567,7 +1564,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .clickRepeatButtonTransaction(Operations.DEPOSIT, randomMoneyDeposit)
                 .checkTransferModalTitleRepeatVisible();
 
-        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
+        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModalText();
         final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + firstUserFirstAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
@@ -1576,7 +1573,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkAccountSizeInRepeatModal(expectedListSize)
                 .selectAccountInRepeatModal(firstUserFirstAccount);
 
-        final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
+        final String actualAccountInfoInList = transferPage.getSelectedAccountInRepeatModal();
         final String expectedAccountInfoInList = getAccountInfoListOld(firstUserToken, firstUserFirstAccount);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
@@ -1633,11 +1630,11 @@ public class TransferTests extends UIBaseTestSenior {
         transferPage.checkTransactionDetails(transactionsTextTransfer, randomMoneyTransfer, Operations.TRANSFER_OUT, userFirstAccountInfo, firstUserToken);
 
         assertThat(transferPage
-                .checkRepeatButtonNotAccessable(Operations.DEPOSIT)).isTrue();
+                .checkRepeatButtonNotAccessible(Operations.DEPOSIT)).isTrue();
         assertThat(transferPage
-                .checkRepeatButtonNotAccessable(Operations.TRANSFER_IN)).isFalse();
+                .checkRepeatButtonNotAccessible(Operations.TRANSFER_IN)).isFalse();
         assertThat(transferPage
-                .checkRepeatButtonNotAccessable(Operations.TRANSFER_OUT)).isFalse();
+                .checkRepeatButtonNotAccessible(Operations.TRANSFER_OUT)).isFalse();
     }
 
     @AdminSession(amountUsers = 2)
@@ -1691,7 +1688,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer)
                 .checkTransferModalTitleRepeatVisible();
 
-        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
+        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModalText();
         final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
@@ -1700,7 +1697,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkAccountSizeInRepeatModal(expectedListSize)
                 .selectAccountInRepeatModal(firstUserFirstAccount);
 
-        final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
+        final String actualAccountInfoInList = transferPage.getSelectedAccountInRepeatModal();
         final String expectedAccountInfoInList = getAccountInfoListOld(firstUserToken, firstUserFirstAccount);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
@@ -1754,7 +1751,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer)
                 .checkTransferModalTitleRepeatVisible();
 
-        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
+        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModalText();
         final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
@@ -1763,7 +1760,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkAccountSizeInRepeatModal(expectedListSize)
                 .selectAccountInRepeatModal(firstUserAccount);
 
-        final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
+        final String actualAccountInfoInList = transferPage.getSelectedAccountInRepeatModal();
         final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccountInfo.getAccountNumber());
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
@@ -1826,7 +1823,7 @@ public class TransferTests extends UIBaseTestSenior {
         transferPage.clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer);
         transferPage.checkTransferModalTitleRepeatVisible();
 
-        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
+        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModalText();
         final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
@@ -1835,7 +1832,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkAccountSizeInRepeatModal(expectedListSize)
                 .selectAccountInRepeatModal(firstUserFirstAccount);
 
-        final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
+        final String actualAccountInfoInList = transferPage.getSelectedAccountInRepeatModal();
         final String expectedAccountInfoInList = getAccountInfoListOld(firstUserToken, firstUserFirstAccount);
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
@@ -1889,7 +1886,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer)
                 .checkTransferModalTitleRepeatVisible();
 
-        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
+        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModalText();
         final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 
@@ -1898,7 +1895,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkAccountSizeInRepeatModal(expectedListSize)
                 .selectAccountInRepeatModal(firstUserAccount);
 
-        final String actualAccountInfoInList = transferPage.getAccountSelectorInRepeatModal().getSelectedOptionText();
+        final String actualAccountInfoInList = transferPage.getSelectedAccountInRepeatModal();
         final String expectedAccountInfoInList = getAccountInfoList(firstUserToken, firstUserAccountInfo.getAccountNumber());
         assertThat(actualAccountInfoInList).isEqualTo(expectedAccountInfoInList);
 
@@ -1957,7 +1954,7 @@ public class TransferTests extends UIBaseTestSenior {
                 .clickRepeatButtonTransaction(Operations.TRANSFER_OUT, randomMoneyTransfer)
                 .checkTransferModalTitleRepeatVisible();
 
-        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModal().text();
+        final String actualTransactionMessage = transferPage.getTransactionInfoInRepeatModalText();
         final String expectedTransactionMessage = TRANSACTION_MESSAGE_REPEAT_MODAL.getValue() + secondUserAccount;
         assertThat(actualTransactionMessage).isEqualTo(expectedTransactionMessage);
 

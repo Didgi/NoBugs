@@ -15,6 +15,12 @@
         <junit.vesion>5.13.4</junit.vesion>
         <jackson.vesion>2.20.0</jackson.vesion>
         <common.vesion>3.19.0</common.vesion>
+<!--        <allure.version>2.30.0</allure.version>-->
+        <allure.version>2.35.3</allure.version>
+        <aspectj.version>1.9.22</aspectj.version>
+        <argLine>
+            -javaagent:${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar
+        </argLine>
     </properties>
     <dependencies>
         <dependency>
@@ -26,6 +32,11 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit.vesion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.13.4</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -119,8 +130,45 @@
             <version>3.6.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-junit5</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-rest-assured</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-selenide</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.qameta.allure</groupId>-->
+<!--            <artifactId>allure-assertj</artifactId>-->
+<!--            <version>${allure.version}</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-java-commons</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${aspectj.version}</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.qameta.allure</groupId>-->
+<!--            <artifactId>allure-aspect</artifactId>-->
+<!--            <version>2.30.0</version>-->
+<!--        </dependency>-->
     </dependencies>
+
     <build>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -145,9 +193,22 @@
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <version>3.2.5</version>
             </plugin>
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.15.2</version>
+<!--                <version>${allure.version}</version>-->
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <argLine>${argLine}</argLine>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
     <profiles>
         <profile>
             <id>api</id>
@@ -161,6 +222,7 @@
                             <includes>
                                 <include>**/api_tests/**</include>
                             </includes>
+                            <argLine>${argLine}</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -179,6 +241,7 @@
                             <includes>
                                 <include>**/ui_tests/**</include>
                             </includes>
+                            <argLine>${argLine}</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -192,10 +255,14 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>3.2.5</version>
+                        <configuration>
+                            <argLine>${argLine}</argLine>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
+
     </profiles>
 
 </project>

@@ -11,6 +11,7 @@ import api.specs.ResponseSpecs;
 import api.utils.RandomModelGenerator;
 import com.google.common.net.HttpHeaders;
 import common.SessionStorage;
+import io.qameta.allure.Step;
 import io.restassured.common.mapper.TypeRef;
 
 import java.util.Comparator;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AdminSteps {
 
+    @Step("Создаём пользователя и получаем его токен")
     public static String createUserAndGetToken() {
 
         final CreateUserRequest userRequest = RandomModelGenerator.generate(CreateUserRequest.class);
@@ -49,6 +51,7 @@ public class AdminSteps {
         return userToken;
     }
 
+    @Step("Удаляем пользователей после завершения тест")
     public static void deleteUsersById() {
         final List<Integer> usersId = SessionStorage.getCreatedUsers();
         System.out.println("Id удаляемых пользователей: " + usersId);
@@ -67,6 +70,7 @@ public class AdminSteps {
         SessionStorage.clearCreatedUsersList();
     }
 
+    @Step("Находим максимальный ID существующего аккаунта")
     public static int getMaxExistedAccountId() {
         final List<CreateUserResponse> usersResponses = new CrudRequester(RequestSpecs.withAdminToken(),
                 EndpointRequests.GET_USERS_BY_ADMIN, ResponseSpecs.requestReturnsOk())

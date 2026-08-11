@@ -9,6 +9,7 @@ import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.Selectors;
 import com.codeborne.selenide.SelenideElement;
+import io.qameta.allure.Step;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import ui.elements.UserTransactionHistory;
@@ -71,21 +72,25 @@ public class TransferPage extends BasePage<TransferPage> {
 
     public final SelenideElement closeButtonTransferInRepeatModal = $("button.btn-close");
 
+    @Step("Проверяем историю всех выполненных транзакций пользователя")
     public List<UserTransactionHistory> getTransactionsHistoryList() {
         return generateElementList(transactionsList, UserTransactionHistory::new);
     }
 
+    @Step("Проверяем, что страница Transfer открыта")
     public TransferPage checkTransferPageOpened() {
         transferTitle.shouldBe(Condition.visible);
         return this;
     }
 
+    @Step("Проверяем дефолтное значение имени для перевода")
     public TransferPage checkRecipientNameDefaultValue() {
         recipientNameField.shouldBe(Condition.visible);
         recipientNameField.shouldHave(Condition.exactValue(""));
         return this;
     }
 
+    @Step("Вводим значение имени для перевода: {name}")
     public TransferPage inputRecipientName(String name) {
         recipientNameField.shouldBe(Condition.visible);
         recipientNameField.shouldHave(Condition.exactValue(""));
@@ -93,18 +98,21 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
+    @Step("Проверяем, что введённое ранее значение имени для перевода не изменилось")
     public TransferPage checkRecipientNameDoesntChange(String name) {
         recipientNameField.shouldBe(Condition.visible);
         recipientNameField.shouldHave(Condition.exactValue(name));
         return this;
     }
 
+    @Step("Проверяем дефолтное значение аккаунта для перевода")
     public TransferPage checkRecipientAccountDefaultValue() {
         recipientAccountField.shouldBe(Condition.visible);
         recipientAccountField.shouldHave(Condition.exactValue(""));
         return this;
     }
 
+    @Step("Вводим значение аккаунта для перевода: {name}")
     public TransferPage inputRecipientAccount(int name) {
         recipientAccountField.shouldBe(Condition.visible);
         recipientAccountField.shouldHave(Condition.exactValue(""));
@@ -112,6 +120,7 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
+    @Step("Вводим значение аккаунта для перевода: {account}")
     public TransferPage inputRecipientAccount(String account) {
         recipientAccountField.shouldBe(Condition.visible);
         recipientAccountField.shouldHave(Condition.exactValue(""));
@@ -119,62 +128,75 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
+    @Step("Проверяем, что ранее введённое значение аккаунта {name} для перевода не изменилось")
     public TransferPage checkRecipientAccountDoesntChange(int name) {
         recipientAccountField.shouldBe(Condition.visible);
         recipientAccountField.shouldHave(Condition.exactValue(AccountData.ACCOUNT_NUMBER_PREFIX.getValue() + name));
         return this;
     }
 
+    @Step("Проверяем, что ранее введённое значение аккаунта {account} для перевода не изменилось")
     public TransferPage checkRecipientAccountDoesntChange(String account) {
         recipientAccountField.shouldBe(Condition.visible);
         recipientAccountField.shouldHave(Condition.exactValue(account));
         return this;
     }
 
+    @Step("Проверяем, что чекбокс для подтверждения пополнения/перевода не активен")
     public TransferPage checkConfirmCheckboxUnchecked() {
         confirmDetailsCheckbox.shouldHave(visible);
         confirmDetailsCheckbox.should(domProperty("checked", String.valueOf(false)));
         return this;
     }
 
+    @Step("Проверяем, что чекбокс для подтверждения пополнения/перевода активен")
     public TransferPage checkConfirmCheckboxChecked() {
         confirmDetailsCheckbox.shouldHave(visible);
         confirmDetailsCheckbox.should(domProperty("checked", String.valueOf(true)));
         return this;
     }
 
+    @Step("Нажимаем на чекбокс для подтверждения пополнения/перевода и проверяем, что он активен")
     public TransferPage clickConfirmCheckboxToChecked() {
         confirmDetailsCheckbox.click();
         confirmDetailsCheckbox.should(domProperty("checked", "true"));
         return this;
     }
 
+    @Step("Нажимаем на чекбокс для подтверждения пополнения/перевода и проверяем, что он не активен")
     public TransferPage clickConfirmCheckboxToUnchecked() {
         confirmDetailsCheckbox.click();
         confirmDetailsCheckbox.should(domProperty("checked", "false"));
         return this;
     }
 
+    @Step("Нажимаем на кнопку Send Transfer")
     public TransferPage clickTransferButton() {
         transferButton.click();
         return this;
     }
 
+
+    @Step("Переходим на вкладку Transfer Again")
     public TransferPage openTransferAgainTab() {
         transferAgainButton.click();
         return this;
     }
 
+
+    @Step("Нажимаем на кнопку New Transfer")
     public TransferPage openNewTransferTab() {
         newTransferButton.click();
         return this;
     }
 
+    @Step("Проверяем, что вкладка Transfer Again открыта")
     public TransferPage checkTransferAgainPageOpened() {
         transactionHistoryTitle.shouldBe(visible);
         return this;
     }
 
+    @Step("Проверяем размер списка выполненных транзакций пользователя")
     public TransferPage checkTransactionsListSize(int expectedSize) {
         transactionsList.shouldHave(size(expectedSize), Duration.ofSeconds(10));
         return this;
@@ -193,6 +215,7 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
+    @Step("Нажимаем на кнопку Repeat для повтора ранее выполненной транзакции")
     public TransferPage clickRepeatButtonTransaction(Operations operation, double money) {
         getTransactionsHistoryList()
                 .stream()
@@ -203,7 +226,10 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
-    public boolean checkRepeatButtonNotAccessable(Operations operation) {
+
+    @Step("Проверяем, что кнопка Repeat для повтора ранее выполненной транзакции не доступна для операции DEPOSIT, " +
+            "но доступна для операций: TRANSFER_IN, TRANSFER_OUT")
+    public boolean checkRepeatButtonNotAccessible(Operations operation) {
         boolean result = false;
         for (UserTransactionHistory userTransactionHistory : getTransactionsHistoryList()) {
             if (userTransactionHistory.getTransactionInfo().contains(operation.name())) {
@@ -214,33 +240,39 @@ public class TransferPage extends BasePage<TransferPage> {
 
     }
 
+    @Step("Проверяем, что название вкладки Repeat Transfer отображается")
     public TransferPage checkTransferModalTitleRepeatVisible() {
         transferModalTitleInRepeatModal.shouldBe(visible);
         return this;
     }
 
+    @Step("Проверяем, что название вкладки Repeat Transfer не отображается")
     public TransferPage checkTransferModalTitleRepeatNotVisible() {
         transferModalTitleInRepeatModal.shouldBe(not(visible));
         return this;
     }
 
+    @Step("Проверяем дефолтное значение в списке аккаунтов вкладки Repeat Transfer")
     public TransferPage checkDefaultValueInAccountListRepeatModal() {
         accountSelectorInRepeatModal.options().findBy(Condition.exactText(DEFAULT_TEXT_IN_ACCOUNT_LIST_SELECTOR))
                 .shouldBe(Condition.visible);
         return this;
     }
 
+    @Step("Проверяем, что количество аккаунтов в списке аккаунтов вкладки Repeat Transfer совпадает с значением {expectedSize}")
     public TransferPage checkAccountSizeInRepeatModal(int expectedSize) {
         accountSelectorInRepeatModal.options().shouldHave(size(expectedSize), Duration.ofSeconds(30));
         return this;
     }
 
+    @Step("Выбираем аккаунт {userAccount} для повторения транзакции на вкладке Repeat Transfer")
     public TransferPage selectAccountInRepeatModal(int userAccount) {
         accountSelectorInRepeatModal.click();
         accountSelectorInRepeatModal.selectOptionByValue(String.valueOf(userAccount));
         return this;
     }
 
+    @Step("Проверяем введённое значение количества денег для повторения транзакции на вкладке Repeat Transfer")
     public TransferPage checkAmountValueFieldRepeatModal(double value) {
         amountFieldInRepeatModal.shouldBe(Condition.visible);
         final String valueAccurate = BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
@@ -248,31 +280,37 @@ public class TransferPage extends BasePage<TransferPage> {
         return this;
     }
 
+    @Step("Вводим значение количества денег для повторения транзакции на вкладке Repeat Transfer")
     public TransferPage inputAmountValueRepeatModal(double value) {
         amountFieldInRepeatModal.setValue(String.valueOf(value));
         return this;
     }
 
+    @Step("Проверяем, что кнопка Send Transfer не кликабельна")
     public TransferPage checkTransferButtonNotClickable() {
         transferButton.shouldBe(not(clickable));
         return this;
     }
 
+    @Step("Очищаем поле для ввода количества денег")
     public TransferPage clearValueAmountRepeatModal() {
         amountFieldInRepeatModal.clear();
         return this;
     }
 
+    @Step("Нажимаем кнопку Cancel")
     public TransferPage clickCancelButton() {
         cancelButtonTransferInRepeatModal.click();
         return this;
     }
 
+    @Step("Нажимаем кнопку Close на вкладке Repeat Transfer")
     public TransferPage clickCloseButton() {
         closeButtonTransferInRepeatModal.click();
         return this;
     }
 
+    @Step("Проверяем текст транзакции по операции {operation}")
     public boolean checkTransaction(List<UserTransactionHistory> transactionsTextTransfer, double money, Operations operation) {
         return transactionsTextTransfer
                 .stream()
@@ -304,6 +342,7 @@ public class TransferPage extends BasePage<TransferPage> {
                         && element.getRepeatButtonText().contains(NAME_REPEAT_BUTTON));
     }
 
+    @Step("Проверяем детали выполненной транзакции по операции {operation}")
     public void checkTransactionDetails(List<UserTransactionHistory> transactionsTextTransfer,
                                         double money, Operations operation,
                                         UserAccountResponse userAccountResponse, String userToken) {
@@ -355,15 +394,18 @@ public class TransferPage extends BasePage<TransferPage> {
         return "✅ Successfully transferred $" + money + " to account " + ACCOUNT_NUMBER_PREFIX.getValue() + userAccount + "!";
     }
 
+    @Step("Получаем сообщение об успешном выполненном переводе по аккаунту {accountNumber}")
     public String expectedSuccessfulTransferModalMessage(double money, String accountNumber) {
         return "✅ Successfully transferred $" + money + " to account " + accountNumber + "!";
     }
 
+    @Step("Получаем сообщение об успешном выполненном повторном переводе с аккаунта {accountIdFrom} на аккаунт {accountIdTo}")
     public String expectedSuccessfulTransferModalMessageInRepeatModal(double money, int accountIdFrom, int accountIdTo) {
         final String moneyAccurate = BigDecimal.valueOf(money).stripTrailingZeros().toPlainString();
         return "✅ Transfer of $" + moneyAccurate + " successful from Account " + accountIdFrom + " to " + accountIdTo + "!";
     }
 
+    @Step("Проверяем, что выбран аккаунт {userAccountNumber} на вкладке Repeat Transfer")
     public TransferPage checkSelectedAccountInListRepeatModal(String userToken, String userAccountNumber) {
         final String actualAccountInfoInListRepeatModal = accountSelectorInRepeatModal.getSelectedOptionText();
         final String expectedAccountInfoInListRepeatModal = getAccountInfoList(userToken, userAccountNumber);
@@ -375,4 +417,16 @@ public class TransferPage extends BasePage<TransferPage> {
     public String url() {
         return UiPath.TRANSFER;
     }
+
+    @Step("Получаем текст о транзакции в Repeat вкладке")
+    public String getTransactionInfoInRepeatModalText(){
+        return getTransactionInfoInRepeatModal().text();
+    }
+
+    @Step("Получаем выбранный аккаунт на странице Repeat")
+    public String getSelectedAccountInRepeatModal(){
+        return getAccountSelectorInRepeatModal().getSelectedOptionText();
+    }
 }
+
+

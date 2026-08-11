@@ -5,6 +5,7 @@ import api.models.LoginRequest;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.requesters.CrudRequester;
 import com.google.common.net.HttpHeaders;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
@@ -29,7 +30,7 @@ public class RequestSpecs {
     public static RequestSpecBuilder basicRequestSpec() {
         return new RequestSpecBuilder().setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
-                .addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter()))
+                .addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter(), new AllureRestAssured()))
                 .setBaseUri(BASE_URI);
     }
 
