@@ -1,7 +1,6 @@
 package api_tests;
 
 import api.models.CreateUserRequest;
-import api.models.LoginRequest;
 import api.models.UserProfileResponse;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.requesters.CrudRequester;
@@ -9,12 +8,8 @@ import api.requests.skelethon.requesters.ValidatableCrudRequester;
 import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import api.utils.RandomData;
-import api.utils.RandomModelGenerator;
-import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Random;
 
 import static net.sf.saxon.value.BigDecimalValue.MAX_INT;
 
@@ -45,5 +40,23 @@ public class AdminUsersTests extends BaseTestSenior {
 
         new CrudRequester(RequestSpecs.withAdminToken(),
                 EndpointRequests.DELETE_USER, ResponseSpecs.requestReturnsNotFound()).DELETE(nonExistentId);
+    }
+
+    @Test
+    @DisplayName("Негативный тест: выполнение запроса на создание юзера без указания обязательных полей")
+    public void cannotCreateUserWithoutRequiredFields() {
+
+        final CreateUserRequest createUserRequestWithoutPassword = CreateUserRequest.builder().username(RandomData.randomName(5)).role("USER").build();
+        new CrudRequester(RequestSpecs.withAdminToken(),
+                EndpointRequests.CREATE_USER, ResponseSpecs.requestReturnsBadRequest()).POST(createUserRequestWithoutPassword);
+    }
+
+    @Test
+    @DisplayName("Негативный тест: выполнение запроса на создание юзера без указания токена админа")
+    public void cannotCreateUserWithoutAdminToken() {
+
+        final CreateUserRequest createUserRequestWithoutPassword = CreateUserRequest.builder().username(RandomData.randomName(5)).role("USER").build();
+        new CrudRequester(RequestSpecs.withoutTokenSpec(),
+                EndpointRequests.CREATE_USER, ResponseSpecs.requestReturnsUnauthorized()).POST(createUserRequestWithoutPassword);
     }
 }
