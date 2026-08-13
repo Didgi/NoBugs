@@ -145,11 +145,11 @@
             <artifactId>allure-selenide</artifactId>
             <version>${allure.version}</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.qameta.allure</groupId>-->
-<!--            <artifactId>allure-assertj</artifactId>-->
-<!--            <version>${allure.version}</version>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>io.qameta.allure</groupId>-->
+        <!--            <artifactId>allure-assertj</artifactId>-->
+        <!--            <version>${allure.version}</version>-->
+        <!--        </dependency>-->
         <dependency>
             <groupId>io.qameta.allure</groupId>
             <artifactId>allure-java-commons</artifactId>
@@ -197,7 +197,6 @@
                 <groupId>io.qameta.allure</groupId>
                 <artifactId>allure-maven</artifactId>
                 <version>2.15.2</version>
-<!--                <version>${allure.version}</version>-->
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -228,7 +227,6 @@
                 </plugins>
             </build>
         </profile>
-
         <profile>
             <id>ui</id>
             <build>
@@ -262,7 +260,5 @@
                 </plugins>
             </build>
         </profile>
-
     </profiles>
-
 </project>

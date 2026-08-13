@@ -1,8 +1,8 @@
 name: my test workflow
-on:
-  push:
-    paths:
-      - src/**
+on: [push]
+#  push:
+#    paths:
+#      - src/**
 jobs:
   run-tests:
     name: basic test job
@@ -30,6 +30,9 @@ jobs:
       - name: Run Swagger coverage
         if: always()
         run: ./swagger-coverage-commandline/bin/swagger-coverage-commandline -s http://localhost:4111/v3/api-docs -i target/swagger-coverage-output
+      - name: Check api coverage
+        if: always()
+        run: infra/check-api-coverage.sh
       - name: Load test report history
         uses: actions/checkout@v2
         if: always()
@@ -59,6 +62,7 @@ jobs:
       - name: Run Checkstyle
         run: ./mvnw checkstyle:checkstyle -q
       - name: Build docker image and push to the docker hub
+        if: success()
         run: infra/push-tests-in-repo.sh
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
