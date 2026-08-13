@@ -16,7 +16,6 @@ import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import api.utils.RandomData;
 import api.utils.RandomModelGenerator;
-import com.codeborne.selenide.Selenide;
 import common.SessionStorage;
 import common.annotations.AdminSession;
 import common.annotations.ApiVersion;

@@ -1,8 +1,8 @@
 name: my test workflow
-on:
-  push:
-    paths:
-      - src/**
+on: [push]
+  #push:
+   # paths:
+    #  - src/**
 jobs:
   run-tests:
     name: basic test job
@@ -29,7 +29,7 @@ jobs:
         run: ./mvnw clean package
       - name: Run Swagger coverage
         if: always()
-        run: .swagger-coverage-commandline/bin/swagger-coverage-commandline -s http://localhost:4111/v3/api-docs -i target/swagger-coverage-output
+        run: ./swagger-coverage-commandline/bin/swagger-coverage-commandline -s http://localhost:4111/v3/api-docs -i target/swagger-coverage-output
       - name: Load test report history
         uses: actions/checkout@v2
         if: always()
@@ -37,7 +37,7 @@ jobs:
           ref: gh-pages
           path: gh-pages
       - name: Build test report
-        uses: simple-elf/allure-report-action@v1.7
+        uses: simple-elf/allure-report-action@master
         if: always()
         with:
           gh_pages: gh-pages
@@ -55,7 +55,7 @@ jobs:
           publish_dir: allure-history
       - name: Clean up app environment
         if: always()
-        run: docker compose -f infra/docker-compose.yaml down -v
+        run: pwd && ls && docker compose -f infra/docker-compose.yaml down -v
       - name: Run Checkstyle
         run: ./mvnw checkstyle:checkstyle -q
       - name: Build docker image and push to the docker hub

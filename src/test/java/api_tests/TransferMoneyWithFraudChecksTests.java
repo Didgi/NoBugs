@@ -602,7 +602,6 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     public void userCannotTransferMoneyWhenRequestReturnsBadRequest() throws SQLException {
 
         double moneyToDeposit = RandomData.getMoneyFromTo(1000, 2000);
-        double moneyToTransfer = RandomData.getMoneyFromTo(1, 1000);
 
         depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
 
@@ -621,19 +620,11 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
                 , EndpointRequests.TRANSFER_MONEY_FRAUD_CHECK, ResponseSpecs.requestReturnsBadRequest())
                 .POST(transferRequestWithoutMoney);
 
-//        softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_BLOCKED.getValue());
-
         softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDeposit);
 
         final AccountsDao firstUserAccountJDBC = DBSteps.getAccountByAccountIdJDBC(userAccount);
 
         softly.assertThat(firstUserAccountJDBC.getBalance()).isEqualTo(moneyToDeposit);
-
-//        UserSteps.checkUserTransactions(authUserToken, userAccount, secondUserAccount, nowTime,
-//                Operations.TRANSFER_OUT, moneyToTransfer, TransactionStatus.BLOCKED, fraudCheckRequiredFalse);
-
-//        UserSteps.checkUserTransactionsDb(userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT.name(),
-//                moneyToTransfer, TransactionStatus.BLOCKED, fraudCheckRequiredFalse);
 
         softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
 
