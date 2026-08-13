@@ -1,8 +1,8 @@
 name: my test workflow
-on:
-  push:
-    paths:
-      - src/**
+on: [push]
+#  push:
+#    paths:
+#      - src/**
 jobs:
   run-tests:
     name: basic test job
