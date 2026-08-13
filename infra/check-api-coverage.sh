@@ -22,14 +22,14 @@ fi
 
 COVERAGE=$(awk "BEGIN {printf \"%.2f\", ($COVERED / $ALL) * 100}")
 
-echo ">>> Покрыто: $COVERED"
-echo ">>> Общее количество: $ALL"
-echo ">>> API Coverage: $COVERAGE%"
-echo ">>> Минимальное покрытие: $MIN_COVERAGE%"
+echo ">>> Покрыто проверок: $COVERED"
+echo ">>> Общее количество возможных проверок: $ALL"
+echo ">>> API Coverage (%): $COVERAGE%"
+echo ">>> Минимальное покрытие (%): $MIN_COVERAGE%"
 
 if (( $(awk "BEGIN {print ($COVERAGE < $MIN_COVERAGE)}") )); then
     echo "❌ Quality Gate FAILED"
-    echo "❌ API coverage ($COVERAGE%) is below $MIN_COVERAGE%"
+    echo "❌ API coverage ($COVERAGE%) is below than $MIN_COVERAGE%"
     exit 1
 fi
 
