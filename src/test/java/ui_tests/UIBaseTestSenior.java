@@ -62,5 +62,6 @@ public class UIBaseTestSenior extends BaseTestSenior {
     @Step("Завершаем тесты. Закрываем WebDriver")
     public void tearDownUiTests() {
         Selenide.closeWebDriver();
+
     }
 }
