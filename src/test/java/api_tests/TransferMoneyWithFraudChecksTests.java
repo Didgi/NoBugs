@@ -6,10 +6,15 @@ import api.config.TransactionFraudCheckDecision;
 import api.config.TransactionStatus;
 import api.dao.jdbc.AccountsDao;
 import api.models.TransferFraudCheckResponse;
+import api.models.TransferRequest;
+import api.requests.skelethon.EndpointRequests;
+import api.requests.skelethon.requesters.CrudRequester;
 import api.requests.steps.db_steps.DBSteps;
 import api.requests.steps.user_steps.UserSteps;
+import api.specs.RequestSpecs;
+import api.specs.ResponseSpecs;
 import api.utils.RandomData;
-import common.annotations.Bug;
+import common.annotations.ApiVersion;
 import common.annotations.FraudCheckMock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +39,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
 
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.APPROVED
     )
@@ -85,7 +90,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.BLOCKED
     )
@@ -131,7 +136,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.REVIEW_REQUIRED
     )
@@ -191,7 +196,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             requiresManualReview = true
     )
@@ -251,7 +256,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             decision = TransactionFraudCheckDecision.VERIFICATION_REQUIRED
     )
@@ -311,7 +316,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             additionalVerificationRequired = true
     )
@@ -372,7 +377,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             badRequest = true
     )
@@ -431,7 +436,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             internalServerError = true
     )
@@ -490,7 +495,7 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
     }
 
     @Test
-    @Bug(value = true)
+    @ApiVersion(version = "with_fraud_check_with_approve")
     @FraudCheckMock(
             timeout = true,
             decision = TransactionFraudCheckDecision.APPROVED
@@ -547,5 +552,98 @@ public class TransferMoneyWithFraudChecksTests extends BaseTestSenior {
         secondUserAccountJDBC = DBSteps.getAccountByAccountIdJDBC(secondUserAccount);
 
         softly.assertThat(secondUserAccountJDBC.getBalance()).isEqualTo(moneyToTransfer);
+    }
+
+    @Test
+    @ApiVersion(version = "with_fraud_check_with_approve")
+    @DisplayName("Негативный тест: запрос подтверждения операции перевода с проверкой на мошенничество не выполняется с " +
+            "чужим токеном")
+    public void userCannotTransferMoneyWhenRequestReturnsForbidden() throws SQLException {
+
+        double moneyToDeposit = RandomData.getMoneyFromTo(1000, 2000);
+        double moneyToTransfer = RandomData.getMoneyFromTo(1, 1000);
+
+        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
+
+        final String authTokenUserSecond = createUserAndGetToken();
+
+        final int secondUserAccount = createUserAccount(authTokenUserSecond);
+
+        nowTime = ZonedDateTime.now(ZoneOffset.UTC);
+
+        final TransferRequest transferRequest = TransferRequest.builder().senderAccountId(userAccount)
+                .receiverAccountId(secondUserAccount)
+                .amount(moneyToTransfer).build();
+
+        new CrudRequester(RequestSpecs.withAdminToken()
+                , EndpointRequests.TRANSFER_MONEY_FRAUD_CHECK, ResponseSpecs.requestReturnsForbidden())
+                .POST(transferRequest);
+
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDeposit);
+
+        final AccountsDao firstUserAccountJDBC = DBSteps.getAccountByAccountIdJDBC(userAccount);
+
+        softly.assertThat(firstUserAccountJDBC.getBalance()).isEqualTo(moneyToDeposit);
+
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
+
+        final AccountsDao secondUserAccountJDBC = DBSteps.getAccountByAccountIdJDBC(secondUserAccount);
+
+        softly.assertThat(secondUserAccountJDBC.getBalance()).isEqualTo(DEFAULT_ZERO_BALANCE);
+
+        checkNegativeUserTransactionsDb(userAccount, Operations.TRANSFER_OUT);
+        checkNegativeUserTransactions(authTokenUserSecond, secondUserAccount, Operations.TRANSFER_IN);
+    }
+
+    @Test
+    @ApiVersion(version = "with_fraud_check_with_approve")
+    @DisplayName("Негативный тест: запрос подтверждения операции перевода с проверкой на мошенничество не выполняется с " +
+            "без обязательных полей")
+    public void userCannotTransferMoneyWhenRequestReturnsBadRequest() throws SQLException {
+
+        double moneyToDeposit = RandomData.getMoneyFromTo(1000, 2000);
+        double moneyToTransfer = RandomData.getMoneyFromTo(1, 1000);
+
+        depositMoneyWOCheckResponse(authUserToken, userAccount, moneyToDeposit);
+
+        final String authTokenUserSecond = createUserAndGetToken();
+
+        final int secondUserAccount = createUserAccount(authTokenUserSecond);
+
+        nowTime = ZonedDateTime.now(ZoneOffset.UTC);
+
+        final TransferRequest transferRequestWithoutMoney = TransferRequest.builder()
+                .senderAccountId(userAccount)
+                .receiverAccountId(secondUserAccount)
+                .build();
+
+        new CrudRequester(RequestSpecs.withToken(authUserToken)
+                , EndpointRequests.TRANSFER_MONEY_FRAUD_CHECK, ResponseSpecs.requestReturnsBadRequest())
+                .POST(transferRequestWithoutMoney);
+
+//        softly.assertThat(transferResponse.getMessage()).isEqualTo(ResponseMessages.TRANSFER_BLOCKED.getValue());
+
+        softly.assertThat(getUserBalance(authUserToken, userAccount)).isEqualTo(moneyToDeposit);
+
+        final AccountsDao firstUserAccountJDBC = DBSteps.getAccountByAccountIdJDBC(userAccount);
+
+        softly.assertThat(firstUserAccountJDBC.getBalance()).isEqualTo(moneyToDeposit);
+
+//        UserSteps.checkUserTransactions(authUserToken, userAccount, secondUserAccount, nowTime,
+//                Operations.TRANSFER_OUT, moneyToTransfer, TransactionStatus.BLOCKED, fraudCheckRequiredFalse);
+
+//        UserSteps.checkUserTransactionsDb(userAccount, secondUserAccount, nowTime, Operations.TRANSFER_OUT.name(),
+//                moneyToTransfer, TransactionStatus.BLOCKED, fraudCheckRequiredFalse);
+
+        softly.assertThat(getUserBalance(authTokenUserSecond, secondUserAccount)).isEqualTo(DEFAULT_ZERO_BALANCE);
+
+        final AccountsDao secondUserAccountJDBC = DBSteps.getAccountByAccountIdJDBC(secondUserAccount);
+
+        softly.assertThat(secondUserAccountJDBC.getBalance()).isEqualTo(DEFAULT_ZERO_BALANCE);
+
+        checkNegativeUserTransactionsDb(userAccount, Operations.TRANSFER_OUT);
+        checkNegativeUserTransactions(authTokenUserSecond, secondUserAccount, Operations.TRANSFER_IN);
+
+
     }
 }
