@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wiremock
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: wiremock
+  template:
+    metadata:
+      labels:
+        app: wiremock
+      annotations:
+        co.elastic.logs/enabled: "true"
+        co.elastic.logs/module: springboot
+        co.elastic.logs/json.keys_under_root: "true"
+        co.elastic.logs/json.add_error_key: "true"
+    spec:
+      containers:
+        - name: wiremock
+          image: wiremock/wiremock:3.13.1
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: 8089
+          volumeMounts:
+            - name: wiremock-mapping
+              mountPath: /home/wiremock/mappings
+            - name: wiremock-files
+              mountPath: /home/wiremock/__files
+      volumes:
+        - name: wiremock-mapping
+          hostPath:
+            path: /home/wiremock/mappings
+        - name: wiremock-files
+          hostPath:
+            path: /home/wiremock/__files
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wiremock
+  labels:
+    app: wiremock
+spec:
+  selector:
+    app: wiremock
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: NodePort

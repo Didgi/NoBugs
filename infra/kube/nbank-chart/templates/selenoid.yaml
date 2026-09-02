@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selenoid
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: selenoid
+  template:
+    metadata:
+      labels:
+        app: selenoid
+    spec:
+      containers:
+        - name: selenoid
+          image: adtechqatools/selenoid:latest-release
+          args: ["-video-output-dir", "/opt/selenoid/video"]
+          env:
+            - name: OVERRIDE_VIDEO_OUTPUT_DIR
+              value: /opt/selenoid/video
+            - name: DOCKER_API_VERSION
+              value: "1.51"
+          ports:
+            - containerPort: 4444
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+            - name: selenoid-config
+              mountPath: /etc/selenoid
+            - name: video
+              mountPath: /opt/selenoid/video
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+        - name: selenoid-config
+          configMap:
+            name: selenoid-config
+        - name: video
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: selenoid
+spec:
+  selector:
+    app: selenoid
+  ports:
+    - protocol: TCP
+      port: 4444
+      targetPort: 4444
+  type: NodePort
+
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: selenoid-config
+
+data:
+  browsers.json: |
+{{.Files.Get "files/browsers.json" | indent 4 }}
