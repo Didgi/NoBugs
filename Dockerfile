@@ -1,13 +1,5 @@
 FROM maven:3.9.9-eclipse-temurin-17
 
-#ARG test_profile=api
-#ARG API_BASEURL=http://backend:4111
-#ARG UI_BASEURL=http://frontend
-#ARG DB_URL=jdbc:postgresql://postgres:5432/nbank
-#ARG WIRE_MOCK_HOST=wiremock;
-#ARG WIRE_MOCK_PORT=8080;
-#Для чего тут указываю ARG?
-
 ENV test_profile=all
 ENV api_baseurl=http://backend:4111
 ENV ui_baseurl=http://frontend

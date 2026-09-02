@@ -4,6 +4,8 @@ import api.config.Config;
 import api.models.LoginRequest;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.requesters.CrudRequester;
+import com.github.viclovsky.swagger.coverage.FileSystemOutputWriter;
+import com.github.viclovsky.swagger.coverage.SwaggerCoverageRestAssured;
 import com.google.common.net.HttpHeaders;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -12,11 +14,13 @@ import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static api.config.ApiPath.BASE_URI;
+import static com.github.viclovsky.swagger.coverage.SwaggerCoverageConstants.OUTPUT_DIRECTORY;
 
 public class RequestSpecs {
 
@@ -30,7 +34,10 @@ public class RequestSpecs {
     public static RequestSpecBuilder basicRequestSpec() {
         return new RequestSpecBuilder().setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
-                .addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter(), new AllureRestAssured()))
+                .addFilters(List.of(new RequestLoggingFilter(), new ResponseLoggingFilter(), new AllureRestAssured(),
+                        new SwaggerCoverageRestAssured(
+                                new FileSystemOutputWriter(Paths.get("target/" + OUTPUT_DIRECTORY))
+                        )))
                 .setBaseUri(BASE_URI);
     }
 

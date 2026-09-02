@@ -1,5 +1,6 @@
 package api.requests.skelethon.requesters;
 
+import api.config.Config;
 import api.models.BaseModel;
 import api.requests.skelethon.EndpointRequests;
 import api.requests.skelethon.HttpBaseRequest;
@@ -30,7 +31,7 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
             return given()
                     .spec(requestSpecification)
                     .body(body)
-                    .post(endpointRequests.getPath())
+                    .post(Config.getProperty("api_version") + endpointRequests.getPath())
                     .then()
                     .spec(responseSpecification);
         });
@@ -42,7 +43,7 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
             return given()
                     .spec(requestSpecification)
                     .pathParam("transactionId", transactionId)
-                    .post(endpointRequests.getPath())
+                    .post(Config.getProperty("api_version") + endpointRequests.getPath())
                     .then()
                     .spec(responseSpecification);
         });
@@ -53,7 +54,7 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
     public ValidatableResponse GET() {
         return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
             return given().spec(requestSpecification)
-                    .get(endpointRequests.getPath())
+                    .get(Config.getProperty("api_version") + endpointRequests.getPath())
                     .then()
                     .spec(responseSpecification);
         });
@@ -64,7 +65,7 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
         return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
             return given().spec(requestSpecification)
                     .pathParam("accountId", accountId)
-                    .get(endpointRequests.getPath())
+                    .get(Config.getProperty("api_version") + endpointRequests.getPath())
                     .then()
                     .spec(responseSpecification);
         });
@@ -82,7 +83,7 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
             var body = baseModel != null ? baseModel : "";
             return given().spec(requestSpecification)
                     .body(body)
-                    .put(endpointRequests.getPath())
+                    .put(Config.getProperty("api_version") + endpointRequests.getPath())
                     .then()
                     .spec(responseSpecification);
         });
@@ -93,7 +94,7 @@ public class CrudRequester extends HttpBaseRequest implements CrudRequestsInterf
     public ValidatableResponse DELETE(int id) {
         return StepLogger.log("Тело запроса/ответа по ручке: " + endpointRequests.getPath(), () -> {
             return given().spec(requestSpecification)
-                    .delete(endpointRequests.getPath() + id)
+                    .delete(Config.getProperty("api_version") + endpointRequests.getPath() + id)
                     .then()
                     .spec(responseSpecification);
         });

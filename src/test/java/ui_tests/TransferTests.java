@@ -16,7 +16,6 @@ import api.specs.RequestSpecs;
 import api.specs.ResponseSpecs;
 import api.utils.RandomData;
 import api.utils.RandomModelGenerator;
-import com.codeborne.selenide.Selenide;
 import common.SessionStorage;
 import common.annotations.AdminSession;
 import common.annotations.ApiVersion;
@@ -1305,9 +1304,13 @@ public class TransferTests extends UIBaseTestSenior {
                 .checkSelectedAccountInList(firstUserToken, userSecondAccountInfo.getAccountNumber())
                 .checkTransactionsListSize(expectedTransactions);
 
-        final List<UserTransactionHistory> transactionsTextTransferSecondAccount = transferPage.getTransactionsHistoryList();
-        assertThat(transferPage.checkTransaction(transactionsTextTransferSecondAccount, randomMoneyForSecondAccount, Operations.DEPOSIT)).isTrue();
-        assertThat(transferPage.checkTransaction(transactionsTextTransferSecondAccount, randomMoneyForFirstAccount, Operations.TRANSFER_IN)).isTrue();
+        RetryUtils.retry(() ->
+                        transferPage.checkTransaction(transferPage.getTransactionsHistoryList(), randomMoneyForSecondAccount, Operations.DEPOSIT)
+                , Boolean.TRUE::equals);
+
+        RetryUtils.retry(() ->
+                        transferPage.checkTransaction(transferPage.getTransactionsHistoryList(), randomMoneyForFirstAccount, Operations.TRANSFER_IN)
+                , Boolean.TRUE::equals);
     }
 
     @AdminSession
