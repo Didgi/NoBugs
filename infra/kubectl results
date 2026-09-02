@@ -1,0 +1,54 @@
+alekseikokarev@MacBook-Air-Aleksei first-project % kubectl get svc
+NAME          TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+backend       NodePort    10.106.125.225   <none>        4111:32694/TCP   2d23h
+frontend      NodePort    10.102.69.126    <none>        80:30435/TCP     2d22h
+kubernetes    ClusterIP   10.96.0.1        <none>        443/TCP          2d23h
+postgres      ClusterIP   10.108.251.236   <none>        5432/TCP         2d23h
+selenoid      NodePort    10.102.97.23     <none>        4444:30960/TCP   2d22h
+selenoid-ui   NodePort    10.97.122.235    <none>        8080:31313/TCP   2d22h
+wiremock      NodePort    10.110.97.138    <none>        8080:31857/TCP   2d22h
+
+kubectl port-forward svc/frontend 3000:80 &
+kubectl port-forward svc/backend 4111:4111 &
+kubectl port-forward svc/selenoid 4444:4444 &
+kubectl port-forward svc/selenoid-ui 8080:8080 &
+kubectl port-forward svc/wiremock 8089:8080 &
+kubectl port-forward svc/postgres 5433:5432
+
+curl http://localhost:3000
+curl http://localhost:4111/swagger-ui/index.html
+
+# Scale Deployment
+--Before--
+alekseikokarev@MacBook-Air-Aleksei first-project % kubectl get pods
+NAME                           READY   STATUS    RESTARTS      AGE
+backend-754657c868-jwvn2       1/1     Running   6 (22h ago)   2d23h
+frontend-54f886688f-cdvk9      1/1     Running   5 (22h ago)   2d22h
+postgres-546bdcd767-g7xgz      1/1     Running   2 (22h ago)   2d23h
+selenoid-868df6cd75-vs42j      1/1     Running   2 (22h ago)   2d11h
+selenoid-ui-7cbdd99577-h8gnx   1/1     Running   2 (22h ago)   2d22h
+wiremock-854455f97c-rgm42      1/1     Running   2 (22h ago)   2d22h
+
+--After--
+alekseikokarev@MacBook-Air-Aleksei first-project % kubectl get pods
+NAME                           READY   STATUS    RESTARTS      AGE
+backend-754657c868-jwvn2       1/1     Running   6 (23h ago)   2d23h
+backend-754657c868-nw7lc       1/1     Running   0             4m30s
+frontend-54f886688f-cdvk9      1/1     Running   5 (23h ago)   2d22h
+postgres-546bdcd767-g7xgz      1/1     Running   2 (23h ago)   2d23h
+selenoid-868df6cd75-vs42j      1/1     Running   2 (23h ago)   2d11h
+selenoid-ui-7cbdd99577-h8gnx   1/1     Running   2 (23h ago)   2d22h
+wiremock-854455f97c-rgm42      1/1     Running   2 (23h ago)   2d22h
+
+kubectl logs backend-6848d7fb7d-88mqj
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+
+

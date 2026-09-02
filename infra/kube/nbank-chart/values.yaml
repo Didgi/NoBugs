@@ -1,0 +1,12 @@
+imagePullPolicy: IfNotPresent
+replicaCount: 1
+#secret:
+#  databaseUsername: postgres
+#  databasePassword: postgres
+
+dbName: nbank
+databaseUrl: jdbc:postgresql://postgres:5432/nbank
+databaseDriverClassName: org.postgresql.Driver
+fraudDetectionServiceUrl: http://wiremock:8080
+persistence:
+  size: 1Gi
